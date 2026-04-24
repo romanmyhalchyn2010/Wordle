@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pip install fastapi \"uvicorn[standard]\" websockets python-dotenv 2>&1)"
+    ]
+  }
+}
