@@ -14,45 +14,47 @@
   </header>
 
   <main>
-    <!-- Lobby / matchmaking -->
+
+    <!-- ── Lobby ── -->
     <section id="lobby">
       <p id="status-msg" class="status">Find an opponent to start playing.</p>
       <button id="find-game-btn">Find Game</button>
     </section>
 
-    <!-- Game area (hidden until a game starts) -->
+    <!-- ── Game area ── -->
     <section id="game-area" class="hidden">
 
-      <div id="opponent-status" class="opponent-badge">Waiting for opponent…</div>
+      <div class="boards-container">
 
-      <!-- 6 × 5 guess board -->
-      <div id="board" class="board">
-        <!-- rows are built by JS; placeholder rows shown for layout -->
-        <div class="row" id="row-0">
-          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
-          <div class="tile"></div><div class="tile"></div>
+        <!-- Your board -->
+        <div class="board-col">
+          <p class="board-label">You</p>
+          <div id="board" class="board">
+            <div class="row" id="row-0"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="row-1"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="row-2"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="row-3"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="row-4"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="row-5"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          </div>
         </div>
-        <div class="row" id="row-1">
-          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
-          <div class="tile"></div><div class="tile"></div>
+
+        <!-- Opponent board — colours only, no letters -->
+        <div class="board-col">
+          <p class="board-label">Opponent</p>
+          <div id="opponent-board" class="board opp-board">
+            <div class="row" id="opp-row-0"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="opp-row-1"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="opp-row-2"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="opp-row-3"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="opp-row-4"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+            <div class="row" id="opp-row-5"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          </div>
         </div>
-        <div class="row" id="row-2">
-          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
-          <div class="tile"></div><div class="tile"></div>
-        </div>
-        <div class="row" id="row-3">
-          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
-          <div class="tile"></div><div class="tile"></div>
-        </div>
-        <div class="row" id="row-4">
-          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
-          <div class="tile"></div><div class="tile"></div>
-        </div>
-        <div class="row" id="row-5">
-          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
-          <div class="tile"></div><div class="tile"></div>
-        </div>
-      </div>
+
+      </div><!-- .boards-container -->
+
+      <p id="game-status" class="game-status"></p>
 
       <!-- On-screen keyboard -->
       <div id="keyboard" class="keyboard">
@@ -101,12 +103,14 @@
     let currentWord = "";
     let gameId      = null;
     let pollTimer   = null;
+    let gameEnded   = false;
 
     const lobby      = document.getElementById("lobby");
     const gameArea   = document.getElementById("game-area");
     const statusMsg  = document.getElementById("status-msg");
     const findBtn    = document.getElementById("find-game-btn");
-    const oppStatus  = document.getElementById("opponent-status");
+    const gameStatus = document.getElementById("game-status");
+    const keyboard   = document.getElementById("keyboard");
 
     // ── matchmaking ───────────────────────────────────────────────────────────
 
@@ -118,29 +122,27 @@
 
     async function callFindGame() {
       const res  = await fetch("/api/find-game", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player_id: PLAYER_ID }),
+        body:    JSON.stringify({ player_id: PLAYER_ID }),
       });
       const data = await res.json();
-
       if (data.status === "game_started") {
         gameId = data.game_id;
         startGame();
       } else {
-        // still waiting — poll until paired
-        pollTimer = setTimeout(pollForGame, 2000);
+        pollTimer = setTimeout(pollForOpponent, 2000);
       }
     }
 
-    async function pollForGame() {
-      const res  = await fetch(`/api/game/${PLAYER_ID}`).catch(() => null);
+    async function pollForOpponent() {
+      const res = await fetch(`/api/game/${PLAYER_ID}`).catch(() => null);
       if (res && res.ok) {
         const data = await res.json();
         gameId = data.game_id;
         startGame();
       } else {
-        pollTimer = setTimeout(pollForGame, 2000);
+        pollTimer = setTimeout(pollForOpponent, 2000);
       }
     }
 
@@ -148,7 +150,34 @@
       clearTimeout(pollTimer);
       lobby.classList.add("hidden");
       gameArea.classList.remove("hidden");
-      oppStatus.textContent = "Opponent found — good luck!";
+      // poll every 1.5 s so we see the opponent's grid update live
+      pollTimer = setInterval(pollGameState, 1500);
+    }
+
+    // ── live game polling ─────────────────────────────────────────────────────
+
+    async function pollGameState() {
+      const res = await fetch(`/api/game/${PLAYER_ID}`).catch(() => null);
+      if (!res || !res.ok) return;
+      const data = await res.json();
+
+      updateOpponentBoard(data.opponent_grid || []);
+
+      // detect game-over caused by the opponent (we handle our own win in submitGuess)
+      if (data.game_over && !gameEnded) {
+        endGame(
+          data.i_won   ? "You won! 🎉"
+          : data.winner ? `Opponent won! The word was: ${data.word.toUpperCase()}`
+                        : `Draw! The word was: ${data.word.toUpperCase()}`
+        );
+      }
+    }
+
+    function endGame(message) {
+      gameEnded = true;
+      clearInterval(pollTimer);
+      gameStatus.textContent     = message;
+      keyboard.style.pointerEvents = "none";
     }
 
     // ── keyboard input ────────────────────────────────────────────────────────
@@ -159,8 +188,7 @@
     );
 
     function handleKey({ key }) {
-      if (!gameId) return;
-
+      if (!gameId || gameEnded) return;
       if (key === "Backspace") {
         currentWord = currentWord.slice(0, -1);
         updateCurrentRow();
@@ -173,8 +201,7 @@
     }
 
     function updateCurrentRow() {
-      const row   = document.getElementById(`row-${currentRow}`);
-      const tiles = row.querySelectorAll(".tile");
+      const tiles = document.querySelectorAll(`#row-${currentRow} .tile`);
       tiles.forEach((tile, i) => {
         tile.textContent = currentWord[i]?.toUpperCase() ?? "";
         tile.classList.toggle("filled", !!currentWord[i]);
@@ -187,52 +214,62 @@
       const guess = currentWord;
       currentWord = "";
 
-      const res  = await fetch("/api/move", {
-        method: "POST",
+      const res = await fetch("/api/move", {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player_id: PLAYER_ID, guess }),
+        body:    JSON.stringify({ player_id: PLAYER_ID, guess }),
       });
 
       if (!res.ok) {
         const err = await res.json();
-        statusMsg.textContent = err.detail ?? "Invalid guess.";
+        gameStatus.textContent = err.detail ?? "Invalid guess.";
         currentWord = guess;
+        updateCurrentRow();
         return;
       }
 
       const data = await res.json();
+      gameStatus.textContent = "";
+
       revealRow(currentRow, data.result);
       updateKeyboard(guess, data.result);
+      updateOpponentBoard(data.opponent_grid || []);
       currentRow++;
 
       if (data.won) {
-        statusMsg.textContent = "You won! 🎉";
-        gameArea.querySelector("#keyboard").style.pointerEvents = "none";
+        endGame("You won! 🎉");
       } else if (data.game_over) {
-        statusMsg.textContent = `Game over! The word was: ${data.word.toUpperCase()}`;
-        gameArea.querySelector("#keyboard").style.pointerEvents = "none";
+        endGame(`Game over! The word was: ${data.word.toUpperCase()}`);
       }
     }
 
-    // ── board / keyboard updates ──────────────────────────────────────────────
+    // ── board helpers ─────────────────────────────────────────────────────────
 
     function revealRow(rowIndex, result) {
-      const row   = document.getElementById(`row-${rowIndex}`);
-      const tiles = row.querySelectorAll(".tile");
-      tiles.forEach((tile, i) => {
-        setTimeout(() => tile.setAttribute("data-state", result[i]), i * 100);
-      });
+      const tiles = document.querySelectorAll(`#row-${rowIndex} .tile`);
+      tiles.forEach((tile, i) =>
+        setTimeout(() => tile.setAttribute("data-state", result[i]), i * 100)
+      );
+    }
+
+    function updateOpponentBoard(grid) {
+      for (let r = 0; r < 6; r++) {
+        const tiles = document.querySelectorAll(`#opp-row-${r} .tile`);
+        if (r < grid.length) {
+          tiles.forEach((tile, i) => tile.setAttribute("data-state", grid[r][i]));
+        } else {
+          tiles.forEach(tile => tile.removeAttribute("data-state"));
+        }
+      }
     }
 
     function updateKeyboard(guess, result) {
       const priority = { correct: 3, present: 2, absent: 1 };
       guess.split("").forEach((ch, i) => {
-        const btn      = document.querySelector(`.key[data-key="${ch}"]`);
+        const btn = document.querySelector(`.key[data-key="${ch}"]`);
         if (!btn) return;
-        const current  = btn.dataset.state;
-        if (!current || priority[result[i]] > priority[current]) {
-          btn.dataset.state = result[i];
-        }
+        const cur = btn.dataset.state;
+        if (!cur || priority[result[i]] > priority[cur]) btn.dataset.state = result[i];
       });
     }
   </script>

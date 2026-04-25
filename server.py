@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -60,4 +61,5 @@ app.mount("/", StaticFiles(directory="public", html=True), name="static")
 # ── entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host="localhost", port=3000, reload=True)
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("server:app", host="0.0.0.0", port=port)

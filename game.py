@@ -68,6 +68,27 @@ class WordleGame:
             "word":      self.word if self.game_over else None,
         }
 
+    def get_player_state(self, player_id: str) -> dict:
+        """Returns state personalised for one player: own guesses with letters,
+        opponent's guesses as colours only (letters hidden)."""
+        my_guesses  = [g for g in self.guesses if g["player_id"] == player_id]
+        opponent_id = next((p for p in self.players if p != player_id), None)
+        opponent_grid = [
+            g["result"]                                   # list of tile states, no letters
+            for g in self.guesses if g["player_id"] == opponent_id
+        ] if opponent_id else []
+
+        return {
+            "word_length":   WORD_LENGTH,
+            "max_guesses":   MAX_GUESSES,
+            "my_guesses":    my_guesses,
+            "opponent_grid": opponent_grid,
+            "game_over":     self.game_over,
+            "winner":        self.winner,
+            "i_won":         self.winner == player_id if self.winner else False,
+            "word":          self.word if self.game_over else None,
+        }
+
     def get_state(self) -> dict:
         return {
             "word_length": WORD_LENGTH,

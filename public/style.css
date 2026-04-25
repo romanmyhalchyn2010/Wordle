@@ -63,7 +63,7 @@ main {
   align-items:    center;
   gap:            16px;
   width:          100%;
-  max-width:      500px;
+  max-width:      660px;
   padding:        0 16px 40px;
 }
 
@@ -101,15 +101,36 @@ main {
 #find-game-btn:hover:not(:disabled) { background-color: #538d4e; }
 #find-game-btn:disabled             { opacity: 0.5; cursor: not-allowed; }
 
-/* ── opponent badge ──────────────────────────────────────────────────────────── */
-.opponent-badge {
-  font-size:        0.8rem;
-  letter-spacing:   1px;
-  text-transform:   uppercase;
-  background-color: #f0f0f0;
-  border-radius:    20px;
-  padding:          6px 16px;
-  color:            var(--color-absent);
+/* ── two-board layout ────────────────────────────────────────────────────────── */
+.boards-container {
+  display:     flex;
+  gap:         32px;
+  align-items: flex-start;
+  flex-wrap:   wrap;       /* stack on very small screens */
+  justify-content: center;
+}
+
+.board-col {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+}
+
+.board-label {
+  font-size:      0.7rem;
+  font-weight:    700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color:          var(--color-absent);
+}
+
+.game-status {
+  min-height:  1.4em;
+  font-size:   0.95rem;
+  font-weight: 700;
+  text-align:  center;
+  color:       var(--color-text);
 }
 
 /* ── board ───────────────────────────────────────────────────────────────────── */
@@ -159,6 +180,12 @@ main {
   background-color: var(--color-absent);
   border-color:     var(--color-absent);
   color:            #fff;
+}
+
+/* Opponent board — smaller tiles, no text needed */
+.opp-board {
+  --tile-size: 40px;
+  --tile-gap:   4px;
 }
 
 /* ── keyboard ────────────────────────────────────────────────────────────────── */

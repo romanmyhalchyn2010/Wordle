@@ -43,7 +43,13 @@ def make_move(player_id: str, guess: str) -> dict | None:
     game = active_games.get(game_id)
     if not game:
         return None
-    return {**game.evaluate_guess(player_id, guess), "game_id": game_id}
+    move_result = game.evaluate_guess(player_id, guess)
+    # bundle the current opponent grid so the client can update it without waiting for the next poll
+    opponent_id   = next((p for p in game.players if p != player_id), None)
+    opponent_grid = [
+        g["result"] for g in game.guesses if g["player_id"] == opponent_id
+    ] if opponent_id else []
+    return {**move_result, "game_id": game_id, "opponent_grid": opponent_grid}
 
 
 def get_game_state(player_id: str) -> dict | None:
@@ -53,7 +59,7 @@ def get_game_state(player_id: str) -> dict | None:
     game = active_games.get(game_id)
     if not game:
         return None
-    return {**game.get_state(), "game_id": game_id}
+    return {**game.get_player_state(player_id), "game_id": game_id}
 
 
 def remove_player(player_id: str) -> dict:
