@@ -1,151 +1,173 @@
-/* ── design tokens ──────────────────────────────────────────────────────────── */
+/* ── design tokens ───────────────────────────────────────────────────────────────
+   CSS custom properties defined here are shared across the whole stylesheet.
+   Changing a value here updates every rule that references it.               */
 :root {
-  --color-correct:      #6aaa64;
-  --color-present:      #c9b458;
-  --color-absent:       #787c7e;
-  --color-tile-bg:      #ffffff;
-  --color-tile-border:  #d3d6da;
-  --color-tile-active:  #878a8c;
-  --color-key-bg:       #d3d6da;
-  --color-key-text:     #1a1a1b;
-  --color-bg:           #ffffff;
-  --color-text:         #1a1a1b;
-  --color-header-border:#d3d6da;
+  --color-correct:      #6aaa64; /* green  — letter is in the right position */
+  --color-present:      #c9b458; /* yellow — letter is in the word but wrong position */
+  --color-absent:       #787c7e; /* gray   — letter is not in the word */
+  --color-tile-bg:      #ffffff; /* default tile background before any guess */
+  --color-tile-border:  #d3d6da; /* border colour for empty tiles */
+  --color-tile-active:  #878a8c; /* border colour when a tile has a letter typed into it */
+  --color-key-bg:       #d3d6da; /* default key background before the letter is guessed */
+  --color-key-text:     #1a1a1b; /* key label text colour */
+  --color-bg:           #ffffff; /* page background */
+  --color-text:         #1a1a1b; /* primary text colour */
+  --color-header-border:#d3d6da; /* thin line under the header */
 
-  --tile-size: 62px;
-  --tile-gap:   5px;
-  --font-main: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+  --tile-size: 62px; /* width and height of each tile on the player's own board */
+  --tile-gap:   5px; /* gap between tiles within a row, and between rows */
+  --font-main: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif; /* Wordle's font stack */
 }
 
-/* ── reset / base ────────────────────────────────────────────────────────────── */
+/* ── reset ───────────────────────────────────────────────────────────────────────
+   Remove default browser margin/padding and use border-box sizing everywhere
+   so padding doesn't unexpectedly increase element dimensions.               */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── body ────────────────────────────────────────────────────────────────────────
+   Centre everything horizontally and stack sections vertically down the page. */
 body {
   font-family:      var(--font-main);
   background-color: var(--color-bg);
   color:            var(--color-text);
   display:          flex;
-  flex-direction:   column;
-  align-items:      center;
-  min-height:       100vh;
-  user-select:      none;
+  flex-direction:   column;  /* stack header and main vertically */
+  align-items:      center;  /* horizontally centre all children */
+  min-height:       100vh;   /* always fill the full viewport even with little content */
+  user-select:      none;    /* prevent text selection so clicking keys doesn't highlight text */
 }
 
-/* ── header ─────────────────────────────────────────────────────────────────── */
+/* ── header ──────────────────────────────────────────────────────────────────────
+   Thin bar at the top with the game title, matching the classic Wordle look.  */
 header {
   width:         100%;
-  max-width:     500px;
+  max-width:     500px;         /* cap width so the border doesn't stretch too wide */
   padding:       16px 0 12px;
   text-align:    center;
-  border-bottom: 1px solid var(--color-header-border);
-  margin-bottom: 20px;
+  border-bottom: 1px solid var(--color-header-border); /* subtle dividing line */
+  margin-bottom: 20px;          /* space between header and the content below */
 }
 
 header h1 {
   font-size:      2rem;
   font-weight:    700;
-  letter-spacing: 6px;
+  letter-spacing: 6px;          /* wide spacing between letters like the original Wordle logo */
   text-transform: uppercase;
 }
 
 header .subtitle {
-  font-size:   0.75rem;
-  color:        var(--color-absent);
+  font-size:      0.75rem;
+  color:          var(--color-absent);  /* muted gray so it doesn't compete with the title */
   letter-spacing: 3px;
   text-transform: uppercase;
-  margin-top:  4px;
+  margin-top:     4px;
 }
 
-/* ── main ────────────────────────────────────────────────────────────────────── */
+/* ── main ────────────────────────────────────────────────────────────────────────
+   Vertical flex column that centres both the lobby and the game sections.     */
 main {
   display:        flex;
   flex-direction: column;
   align-items:    center;
-  gap:            16px;
+  gap:            16px;         /* space between each child section */
   width:          100%;
-  max-width:      660px;
-  padding:        0 16px 40px;
+  max-width:      660px;        /* wide enough for two boards side-by-side plus the keyboard */
+  padding:        0 16px 40px; /* side padding on small screens; bottom padding for breathing room */
 }
 
+/* utility class — toggled by JS to show/hide sections */
 .hidden { display: none !important; }
 
-/* ── lobby ───────────────────────────────────────────────────────────────────── */
+/* ── lobby ───────────────────────────────────────────────────────────────────────
+   Centred column shown before a game starts.                                  */
 #lobby {
   display:        flex;
   flex-direction: column;
   align-items:    center;
   gap:            16px;
-  margin-top:     40px;
+  margin-top:     40px; /* push it down from the header a little */
 }
 
+/* muted status text used for "Find an opponent" and "Searching…" messages */
 .status {
   font-size:  0.95rem;
-  color:       var(--color-absent);
+  color:      var(--color-absent);
   text-align: center;
 }
 
+/* ── Find Game button ────────────────────────────────────────────────────────────
+   Big green call-to-action button in the lobby.                               */
 #find-game-btn {
   padding:          12px 32px;
   font-size:        1rem;
   font-weight:      700;
   letter-spacing:   1px;
   text-transform:   uppercase;
-  background-color: var(--color-correct);
+  background-color: var(--color-correct); /* green — matches the "correct" tile colour */
   color:            #fff;
   border:           none;
   border-radius:    4px;
   cursor:           pointer;
-  transition:       background-color 0.15s;
+  transition:       background-color 0.15s; /* smooth hover colour change */
 }
 
-#find-game-btn:hover:not(:disabled) { background-color: #538d4e; }
-#find-game-btn:disabled             { opacity: 0.5; cursor: not-allowed; }
+#find-game-btn:hover:not(:disabled) { background-color: #538d4e; } /* slightly darker green on hover */
+#find-game-btn:disabled             { opacity: 0.5; cursor: not-allowed; } /* dimmed while searching */
 
-/* ── two-board layout ────────────────────────────────────────────────────────── */
+/* ── two-board layout ────────────────────────────────────────────────────────────
+   Flex row that places the player's board and the opponent's board side by side.
+   flex-wrap lets them stack vertically on very small screens.                 */
 .boards-container {
-  display:     flex;
-  gap:         32px;
-  align-items: flex-start;
-  flex-wrap:   wrap;       /* stack on very small screens */
-  justify-content: center;
+  display:         flex;
+  gap:             32px;          /* space between the two boards */
+  align-items:     flex-start;    /* align tops, not centres, so labels line up */
+  flex-wrap:       wrap;          /* stack vertically if there isn't enough horizontal space */
+  justify-content: center;        /* centre the pair of boards within main */
 }
 
+/* vertical wrapper for a board label + the board grid */
 .board-col {
   display:        flex;
   flex-direction: column;
   align-items:    center;
-  gap:            8px;
+  gap:            8px; /* space between the label and the board */
 }
 
+/* small uppercase label above each board ("You" / "Opponent") */
 .board-label {
   font-size:      0.7rem;
   font-weight:    700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color:          var(--color-absent);
+  color:          var(--color-absent); /* muted so it doesn't distract from the board */
 }
 
+/* in-game result message: shown after a win, loss, or invalid guess */
 .game-status {
-  min-height:  1.4em;
+  min-height:  1.4em;    /* reserve space so the layout doesn't jump when text appears */
   font-size:   0.95rem;
   font-weight: 700;
   text-align:  center;
   color:       var(--color-text);
 }
 
-/* ── board ───────────────────────────────────────────────────────────────────── */
+/* ── board grid ──────────────────────────────────────────────────────────────────
+   6 rows × 5 columns of square tiles.
+   --tile-size and --tile-gap are CSS variables so the opponent board can override them. */
 .board {
-  display:        grid;
-  grid-template-rows: repeat(6, var(--tile-size));
-  gap:            var(--tile-gap);
+  display:                grid;
+  grid-template-rows:     repeat(6, var(--tile-size)); /* 6 rows, each as tall as one tile */
+  gap:                    var(--tile-gap);
 }
 
+/* each row is itself a grid of 5 equally-sized columns */
 .row {
-  display: grid;
+  display:               grid;
   grid-template-columns: repeat(5, var(--tile-size));
-  gap:     var(--tile-gap);
+  gap:                   var(--tile-gap);
 }
 
+/* individual tile: a square with centred content and a border */
 .tile {
   width:           var(--tile-size);
   height:          var(--tile-size);
@@ -157,54 +179,61 @@ main {
   font-weight:     700;
   text-transform:  uppercase;
   color:           var(--color-text);
-  transition:      border-color 0.05s, background-color 0.3s, color 0.3s;
+  transition:      border-color 0.05s, background-color 0.3s, color 0.3s; /* smooth colour reveal */
 }
 
+/* a tile that has a letter typed into it gets a darker border to indicate it's "active" */
 .tile.filled {
   border-color: var(--color-tile-active);
-  animation:    pop 0.1s ease;
+  animation:    pop 0.1s ease; /* brief scale-up animation when a letter is typed */
 }
 
-/* revealed states */
+/* ── tile revealed states ────────────────────────────────────────────────────────
+   Set via data-state attribute by JS after a guess is submitted.              */
 .tile[data-state="correct"] {
-  background-color: var(--color-correct);
+  background-color: var(--color-correct); /* green background */
   border-color:     var(--color-correct);
-  color:            #fff;
+  color:            #fff; /* white text so it reads against the coloured background */
 }
 .tile[data-state="present"] {
-  background-color: var(--color-present);
+  background-color: var(--color-present); /* yellow background */
   border-color:     var(--color-present);
   color:            #fff;
 }
 .tile[data-state="absent"] {
-  background-color: var(--color-absent);
+  background-color: var(--color-absent);  /* gray background */
   border-color:     var(--color-absent);
   color:            #fff;
 }
 
-/* Opponent board — smaller tiles, no text needed */
+/* ── opponent board overrides ────────────────────────────────────────────────────
+   The opponent board uses smaller tiles because we only show colours, not letters,
+   so there's no need for the tiles to be large enough to read text.          */
 .opp-board {
-  --tile-size: 40px;
-  --tile-gap:   4px;
+  --tile-size: 40px; /* smaller than the main board's 62px */
+  --tile-gap:   4px; /* slightly tighter gap to match the smaller tiles */
 }
 
-/* ── keyboard ────────────────────────────────────────────────────────────────── */
+/* ── keyboard ────────────────────────────────────────────────────────────────────
+   Three rows of clickable letter keys below the boards.                      */
 .keyboard {
   display:        flex;
   flex-direction: column;
   align-items:    center;
-  gap:            8px;
+  gap:            8px;    /* vertical space between each row of keys */
   margin-top:     8px;
 }
 
+/* horizontal row of keys */
 .kb-row {
   display: flex;
-  gap:     6px;
+  gap:     6px; /* horizontal space between individual keys */
 }
 
+/* individual key button */
 .key {
   height:           58px;
-  min-width:        43px;
+  min-width:        43px;  /* standard key width; "wide" keys override this */
   padding:          0 6px;
   border:           none;
   border-radius:    4px;
@@ -217,21 +246,26 @@ main {
   display:          flex;
   align-items:      center;
   justify-content:  center;
-  transition:       background-color 0.2s, color 0.2s;
-  -webkit-tap-highlight-color: transparent;
+  transition:       background-color 0.2s, color 0.2s; /* smooth colour change when a letter's state is revealed */
+  -webkit-tap-highlight-color: transparent; /* remove the blue flash on mobile tap */
 }
 
+/* ENTER and ⌫ are wider than letter keys */
 .key.wide { min-width: 65px; font-size: 0.75rem; }
 
+/* subtle darkening when hovering any key */
 .key:hover { filter: brightness(0.92); }
 
+/* ── key revealed states ─────────────────────────────────────────────────────────
+   Updated by JS after each guess so the keyboard shows which letters are known. */
 .key[data-state="correct"] { background-color: var(--color-correct); color: #fff; }
-.key[data-state="present"]  { background-color: var(--color-present);  color: #fff; }
-.key[data-state="absent"]   { background-color: var(--color-absent);   color: #fff; }
+.key[data-state="present"]  { background-color: var(--color-present); color: #fff; }
+.key[data-state="absent"]   { background-color: var(--color-absent);  color: #fff; }
 
-/* ── animations ──────────────────────────────────────────────────────────────── */
+/* ── animations ──────────────────────────────────────────────────────────────────
+   Brief scale-up when a letter is typed into a tile.                         */
 @keyframes pop {
   0%   { transform: scale(1); }
-  50%  { transform: scale(1.12); }
-  100% { transform: scale(1); }
+  50%  { transform: scale(1.12); } /* scale to 112% at the midpoint */
+  100% { transform: scale(1); }    /* return to normal size */
 }

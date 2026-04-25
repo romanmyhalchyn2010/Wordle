@@ -1,35 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><!-- tell the browser to use UTF-8 so special characters render correctly -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /><!-- make the layout scale correctly on mobile -->
   <title>Wordle Multiplayer</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css" /><!-- load our stylesheet -->
 </head>
 <body>
 
+  <!-- ── page header ── -->
   <header>
-    <h1>WORDLE</h1>
-    <p class="subtitle">Multiplayer</p>
+    <h1>WORDLE</h1><!-- game title -->
+    <p class="subtitle">Multiplayer</p><!-- indicates this is the multiplayer version -->
   </header>
 
   <main>
 
-    <!-- ── Lobby ── -->
+    <!-- ── Lobby: shown before a game starts ── -->
     <section id="lobby">
-      <p id="status-msg" class="status">Find an opponent to start playing.</p>
-      <button id="find-game-btn">Find Game</button>
+      <p id="status-msg" class="status">Find an opponent to start playing.</p><!-- updated by JS to show search/wait state -->
+      <button id="find-game-btn">Find Game</button><!-- clicking this starts matchmaking -->
     </section>
 
-    <!-- ── Game area ── -->
-    <section id="game-area" class="hidden">
+    <!-- ── Game area: hidden until a match is found ── -->
+    <section id="game-area" class="hidden"><!-- "hidden" class is removed by JS when a game starts -->
 
-      <div class="boards-container">
+      <div class="boards-container"><!-- flex row that holds both boards side by side -->
 
-        <!-- Your board -->
-        <div class="board-col">
-          <p class="board-label">You</p>
-          <div id="board" class="board">
+        <!-- Your board: shows your own guesses with letters and colours -->
+        <div class="board-col"><!-- vertical column wrapper for label + board -->
+          <p class="board-label">You</p><!-- label above the board -->
+          <div id="board" class="board"><!-- 6-row × 5-column guess grid for the local player -->
+            <!-- each row has 5 tiles; JS writes letters and colours into them -->
             <div class="row" id="row-0"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
             <div class="row" id="row-1"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
             <div class="row" id="row-2"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
@@ -39,10 +41,11 @@
           </div>
         </div>
 
-        <!-- Opponent board — colours only, no letters -->
+        <!-- Opponent board: shows the opponent's progress as colours only — no letters revealed -->
         <div class="board-col">
-          <p class="board-label">Opponent</p>
-          <div id="opponent-board" class="board opp-board">
+          <p class="board-label">Opponent</p><!-- label above the opponent's board -->
+          <div id="opponent-board" class="board opp-board"><!-- opp-board overrides tile size to be smaller -->
+            <!-- tiles here never get text content; only data-state is set to colour them -->
             <div class="row" id="opp-row-0"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
             <div class="row" id="opp-row-1"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
             <div class="row" id="opp-row-2"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
@@ -52,12 +55,14 @@
           </div>
         </div>
 
-      </div><!-- .boards-container -->
+      </div><!-- end .boards-container -->
 
+      <!-- in-game status message: shows win/loss/error text during gameplay -->
       <p id="game-status" class="game-status"></p>
 
-      <!-- On-screen keyboard -->
+      <!-- On-screen keyboard: lets players type on touch devices; also shows letter colour hints -->
       <div id="keyboard" class="keyboard">
+        <!-- top row: Q through P -->
         <div class="kb-row">
           <button class="key" data-key="q">Q</button>
           <button class="key" data-key="w">W</button>
@@ -70,6 +75,7 @@
           <button class="key" data-key="o">O</button>
           <button class="key" data-key="p">P</button>
         </div>
+        <!-- middle row: A through L -->
         <div class="kb-row">
           <button class="key" data-key="a">A</button>
           <button class="key" data-key="s">S</button>
@@ -81,8 +87,9 @@
           <button class="key" data-key="k">K</button>
           <button class="key" data-key="l">L</button>
         </div>
+        <!-- bottom row: Enter, Z through M, Backspace -->
         <div class="kb-row">
-          <button class="key wide" data-key="Enter">ENTER</button>
+          <button class="key wide" data-key="Enter">ENTER</button><!-- wide key: submits the current guess -->
           <button class="key" data-key="z">Z</button>
           <button class="key" data-key="x">X</button>
           <button class="key" data-key="c">C</button>
@@ -90,7 +97,7 @@
           <button class="key" data-key="b">B</button>
           <button class="key" data-key="n">N</button>
           <button class="key" data-key="m">M</button>
-          <button class="key wide" data-key="Backspace">⌫</button>
+          <button class="key wide" data-key="Backspace">⌫</button><!-- wide key: deletes the last typed letter -->
         </div>
       </div>
 
@@ -98,177 +105,206 @@
   </main>
 
   <script>
+    // generate a unique ID for this player — persists for the lifetime of this browser tab
     const PLAYER_ID = crypto.randomUUID();
-    let currentRow  = 0;
-    let currentWord = "";
-    let gameId      = null;
-    let pollTimer   = null;
-    let gameEnded   = false;
 
+    let currentRow  = 0;      // which row of the board the player is currently typing into (0–5)
+    let currentWord = "";     // the letters the player has typed so far for the current guess
+    let gameId      = null;   // set when matchmaking succeeds; null means not in a game yet
+    let pollTimer   = null;   // holds the return value of setTimeout or setInterval so we can cancel it
+    let gameEnded   = false;  // flag to prevent endGame() from firing twice (e.g. from poll + submitGuess)
+
+    // cache DOM references so we don't query the document on every keystroke
     const lobby      = document.getElementById("lobby");
     const gameArea   = document.getElementById("game-area");
-    const statusMsg  = document.getElementById("status-msg");
-    const findBtn    = document.getElementById("find-game-btn");
-    const gameStatus = document.getElementById("game-status");
-    const keyboard   = document.getElementById("keyboard");
+    const statusMsg  = document.getElementById("status-msg");    // lobby status text
+    const findBtn    = document.getElementById("find-game-btn"); // "Find Game" button
+    const gameStatus = document.getElementById("game-status");   // in-game status text
+    const keyboard   = document.getElementById("keyboard");      // keyboard container
+
 
     // ── matchmaking ───────────────────────────────────────────────────────────
 
     findBtn.addEventListener("click", async () => {
-      findBtn.disabled = true;
-      statusMsg.textContent = "Searching for opponent…";
-      await callFindGame();
+      findBtn.disabled = true;                        // prevent double-clicks while searching
+      statusMsg.textContent = "Searching for opponent…"; // give immediate visual feedback
+      await callFindGame();                           // hit the server to join the queue
     });
 
     async function callFindGame() {
-      const res  = await fetch("/api/find-game", {
+      const res = await fetch("/api/find-game", {    // POST to register this player in the queue
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ player_id: PLAYER_ID }),
+        body:    JSON.stringify({ player_id: PLAYER_ID }), // send our ID so the server can track us
       });
-      const data = await res.json();
-      if (data.status === "game_started") {
-        gameId = data.game_id;
+      const data = await res.json(); // parse the JSON response body
+
+      if (data.status === "game_started") { // an opponent was already waiting — game is ready immediately
+        gameId = data.game_id;              // save the game ID for all subsequent API calls
         startGame();
       } else {
+        // no opponent yet — poll the game state endpoint every 2 s until we're matched
         pollTimer = setTimeout(pollForOpponent, 2000);
       }
     }
 
     async function pollForOpponent() {
-      const res = await fetch(`/api/game/${PLAYER_ID}`).catch(() => null);
-      if (res && res.ok) {
+      // GET /api/game/{player_id} returns 404 while waiting, 200 once matched
+      const res = await fetch(`/api/game/${PLAYER_ID}`).catch(() => null); // suppress network errors
+      if (res && res.ok) {       // 200 means we've been paired with an opponent
         const data = await res.json();
-        gameId = data.game_id;
+        gameId = data.game_id;   // save the game ID
         startGame();
       } else {
+        // still waiting — try again in 2 s
         pollTimer = setTimeout(pollForOpponent, 2000);
       }
     }
 
     function startGame() {
-      clearTimeout(pollTimer);
-      lobby.classList.add("hidden");
-      gameArea.classList.remove("hidden");
-      // poll every 1.5 s so we see the opponent's grid update live
+      clearTimeout(pollTimer);                      // stop the matchmaking poll
+      lobby.classList.add("hidden");                // hide the lobby UI
+      gameArea.classList.remove("hidden");          // reveal the game board and keyboard
+      // begin polling every 1.5 s to keep the opponent's grid updated during gameplay
       pollTimer = setInterval(pollGameState, 1500);
     }
+
 
     // ── live game polling ─────────────────────────────────────────────────────
 
     async function pollGameState() {
+      // fetch the latest personalised game state (own guesses + opponent colour grid)
       const res = await fetch(`/api/game/${PLAYER_ID}`).catch(() => null);
-      if (!res || !res.ok) return;
+      if (!res || !res.ok) return; // network error or game not found — skip this tick
+
       const data = await res.json();
 
-      updateOpponentBoard(data.opponent_grid || []);
+      updateOpponentBoard(data.opponent_grid || []); // repaint the opponent's tiles with the latest colours
 
-      // detect game-over caused by the opponent (we handle our own win in submitGuess)
+      // check if the game ended due to the opponent's action (we handle our own ending in submitGuess)
       if (data.game_over && !gameEnded) {
         endGame(
-          data.i_won   ? "You won! 🎉"
-          : data.winner ? `Opponent won! The word was: ${data.word.toUpperCase()}`
-                        : `Draw! The word was: ${data.word.toUpperCase()}`
+          data.i_won    ? "You won! 🎉"                                              // we won (e.g. our guess was processed between polls)
+          : data.winner ? `Opponent won! The word was: ${data.word.toUpperCase()}`   // opponent guessed correctly
+                        : `Draw! The word was: ${data.word.toUpperCase()}`           // both players ran out of guesses
         );
       }
     }
 
     function endGame(message) {
-      gameEnded = true;
-      clearInterval(pollTimer);
-      gameStatus.textContent     = message;
-      keyboard.style.pointerEvents = "none";
+      gameEnded = true;                          // set flag so no further end-game logic runs
+      clearInterval(pollTimer);                  // stop the polling loop — no need to keep checking
+      gameStatus.textContent = message;          // display the result to the player
+      keyboard.style.pointerEvents = "none";     // disable the keyboard so no more guesses can be typed
     }
+
 
     // ── keyboard input ────────────────────────────────────────────────────────
 
+    // listen for physical keyboard presses
     document.addEventListener("keydown", handleKey);
+    // also wire up every on-screen key button to the same handler
     document.querySelectorAll(".key").forEach(btn =>
       btn.addEventListener("click", () => handleKey({ key: btn.dataset.key }))
     );
 
     function handleKey({ key }) {
-      if (!gameId || gameEnded) return;
+      if (!gameId || gameEnded) return; // ignore input before a game starts or after it ends
+
       if (key === "Backspace") {
-        currentWord = currentWord.slice(0, -1);
-        updateCurrentRow();
+        currentWord = currentWord.slice(0, -1); // remove the last typed letter
+        updateCurrentRow();                     // re-render the current row without that letter
       } else if (key === "Enter" && currentWord.length === 5) {
+        // only allow submission when exactly 5 letters have been typed
         submitGuess();
       } else if (/^[a-zA-Z]$/.test(key) && currentWord.length < 5) {
-        currentWord += key.toLowerCase();
-        updateCurrentRow();
+        // accept any single letter as long as the word isn't full yet
+        currentWord += key.toLowerCase(); // always store lowercase so the server receives consistent input
+        updateCurrentRow();               // show the new letter on the board
       }
     }
 
     function updateCurrentRow() {
+      // select all 5 tile elements in the row the player is currently editing
       const tiles = document.querySelectorAll(`#row-${currentRow} .tile`);
       tiles.forEach((tile, i) => {
-        tile.textContent = currentWord[i]?.toUpperCase() ?? "";
-        tile.classList.toggle("filled", !!currentWord[i]);
+        tile.textContent = currentWord[i]?.toUpperCase() ?? ""; // show the letter (uppercase) or clear the tile
+        tile.classList.toggle("filled", !!currentWord[i]);       // "filled" class adds the active border style
       });
     }
+
 
     // ── submit guess ──────────────────────────────────────────────────────────
 
     async function submitGuess() {
-      const guess = currentWord;
-      currentWord = "";
+      const guess = currentWord; // snapshot the word before clearing it
+      currentWord = "";          // clear the input immediately so the player can't submit twice
 
-      const res = await fetch("/api/move", {
+      const res = await fetch("/api/move", {         // POST the guess to the server
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ player_id: PLAYER_ID, guess }),
+        body:    JSON.stringify({ player_id: PLAYER_ID, guess }), // send who is guessing and what
       });
 
       if (!res.ok) {
+        // server rejected the guess (e.g. wrong length, game over) — show the reason
         const err = await res.json();
         gameStatus.textContent = err.detail ?? "Invalid guess.";
-        currentWord = guess;
-        updateCurrentRow();
+        currentWord = guess;   // restore the word so the player can correct it
+        updateCurrentRow();    // re-render the tiles with the restored letters
         return;
       }
 
       const data = await res.json();
-      gameStatus.textContent = "";
+      gameStatus.textContent = ""; // clear any previous error message on a successful guess
 
-      revealRow(currentRow, data.result);
-      updateKeyboard(guess, data.result);
-      updateOpponentBoard(data.opponent_grid || []);
-      currentRow++;
+      revealRow(currentRow, data.result);            // colour this row's tiles based on the server response
+      updateKeyboard(guess, data.result);            // update key colours so the player knows which letters they've used
+      updateOpponentBoard(data.opponent_grid || []); // immediately apply the opponent grid that came bundled in this response
+      currentRow++; // advance to the next row for the player's next guess
 
       if (data.won) {
-        endGame("You won! 🎉");
+        endGame("You won! 🎉");                                          // this guess solved the word
       } else if (data.game_over) {
-        endGame(`Game over! The word was: ${data.word.toUpperCase()}`);
+        endGame(`Game over! The word was: ${data.word.toUpperCase()}`); // ran out of guesses
       }
     }
+
 
     // ── board helpers ─────────────────────────────────────────────────────────
 
     function revealRow(rowIndex, result) {
+      // select the 5 tiles in the given row and apply colours one by one with a small delay between each
       const tiles = document.querySelectorAll(`#row-${rowIndex} .tile`);
       tiles.forEach((tile, i) =>
+        // stagger the reveal by 100 ms per tile so tiles flip left-to-right like the original Wordle
         setTimeout(() => tile.setAttribute("data-state", result[i]), i * 100)
       );
     }
 
     function updateOpponentBoard(grid) {
-      for (let r = 0; r < 6; r++) {
+      // grid is an array of rows; each row is an array of 5 tile state strings (no letters)
+      for (let r = 0; r < 6; r++) {                                   // iterate all 6 possible rows
         const tiles = document.querySelectorAll(`#opp-row-${r} .tile`);
         if (r < grid.length) {
+          // this row has been guessed — apply the colours the server returned
           tiles.forEach((tile, i) => tile.setAttribute("data-state", grid[r][i]));
         } else {
+          // this row hasn't been guessed yet — clear any colour from a previous game
           tiles.forEach(tile => tile.removeAttribute("data-state"));
         }
       }
     }
 
     function updateKeyboard(guess, result) {
+      // colour each key based on the best result that letter has ever received
+      // priority: correct (3) > present (2) > absent (1) — a green key should never be downgraded to yellow
       const priority = { correct: 3, present: 2, absent: 1 };
       guess.split("").forEach((ch, i) => {
-        const btn = document.querySelector(`.key[data-key="${ch}"]`);
-        if (!btn) return;
-        const cur = btn.dataset.state;
+        const btn = document.querySelector(`.key[data-key="${ch}"]`); // find the matching key button
+        if (!btn) return;                                             // skip if the key isn't in the keyboard (shouldn't happen)
+        const cur = btn.dataset.state;                                // current colour state of this key
+        // only upgrade the key colour, never downgrade (e.g. don't overwrite green with yellow)
         if (!cur || priority[result[i]] > priority[cur]) btn.dataset.state = result[i];
       });
     }
