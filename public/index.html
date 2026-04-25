@@ -3,10 +3,238 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wordle</title>
+  <title>Wordle Multiplayer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Entry point for the Wordle web client — board, keyboard, and matchmaking UI go here -->
+
+  <header>
+    <h1>WORDLE</h1>
+    <p class="subtitle">Multiplayer</p>
+  </header>
+
+  <main>
+    <!-- Lobby / matchmaking -->
+    <section id="lobby">
+      <p id="status-msg" class="status">Find an opponent to start playing.</p>
+      <button id="find-game-btn">Find Game</button>
+    </section>
+
+    <!-- Game area (hidden until a game starts) -->
+    <section id="game-area" class="hidden">
+
+      <div id="opponent-status" class="opponent-badge">Waiting for opponent…</div>
+
+      <!-- 6 × 5 guess board -->
+      <div id="board" class="board">
+        <!-- rows are built by JS; placeholder rows shown for layout -->
+        <div class="row" id="row-0">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile"></div><div class="tile"></div>
+        </div>
+        <div class="row" id="row-1">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile"></div><div class="tile"></div>
+        </div>
+        <div class="row" id="row-2">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile"></div><div class="tile"></div>
+        </div>
+        <div class="row" id="row-3">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile"></div><div class="tile"></div>
+        </div>
+        <div class="row" id="row-4">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile"></div><div class="tile"></div>
+        </div>
+        <div class="row" id="row-5">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile"></div><div class="tile"></div>
+        </div>
+      </div>
+
+      <!-- On-screen keyboard -->
+      <div id="keyboard" class="keyboard">
+        <div class="kb-row">
+          <button class="key" data-key="q">Q</button>
+          <button class="key" data-key="w">W</button>
+          <button class="key" data-key="e">E</button>
+          <button class="key" data-key="r">R</button>
+          <button class="key" data-key="t">T</button>
+          <button class="key" data-key="y">Y</button>
+          <button class="key" data-key="u">U</button>
+          <button class="key" data-key="i">I</button>
+          <button class="key" data-key="o">O</button>
+          <button class="key" data-key="p">P</button>
+        </div>
+        <div class="kb-row">
+          <button class="key" data-key="a">A</button>
+          <button class="key" data-key="s">S</button>
+          <button class="key" data-key="d">D</button>
+          <button class="key" data-key="f">F</button>
+          <button class="key" data-key="g">G</button>
+          <button class="key" data-key="h">H</button>
+          <button class="key" data-key="j">J</button>
+          <button class="key" data-key="k">K</button>
+          <button class="key" data-key="l">L</button>
+        </div>
+        <div class="kb-row">
+          <button class="key wide" data-key="Enter">ENTER</button>
+          <button class="key" data-key="z">Z</button>
+          <button class="key" data-key="x">X</button>
+          <button class="key" data-key="c">C</button>
+          <button class="key" data-key="v">V</button>
+          <button class="key" data-key="b">B</button>
+          <button class="key" data-key="n">N</button>
+          <button class="key" data-key="m">M</button>
+          <button class="key wide" data-key="Backspace">⌫</button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    const PLAYER_ID = crypto.randomUUID();
+    let currentRow  = 0;
+    let currentWord = "";
+    let gameId      = null;
+    let pollTimer   = null;
+
+    const lobby      = document.getElementById("lobby");
+    const gameArea   = document.getElementById("game-area");
+    const statusMsg  = document.getElementById("status-msg");
+    const findBtn    = document.getElementById("find-game-btn");
+    const oppStatus  = document.getElementById("opponent-status");
+
+    // ── matchmaking ───────────────────────────────────────────────────────────
+
+    findBtn.addEventListener("click", async () => {
+      findBtn.disabled = true;
+      statusMsg.textContent = "Searching for opponent…";
+      await callFindGame();
+    });
+
+    async function callFindGame() {
+      const res  = await fetch("/api/find-game", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ player_id: PLAYER_ID }),
+      });
+      const data = await res.json();
+
+      if (data.status === "game_started") {
+        gameId = data.game_id;
+        startGame();
+      } else {
+        // still waiting — poll until paired
+        pollTimer = setTimeout(pollForGame, 2000);
+      }
+    }
+
+    async function pollForGame() {
+      const res  = await fetch(`/api/game/${PLAYER_ID}`).catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json();
+        gameId = data.game_id;
+        startGame();
+      } else {
+        pollTimer = setTimeout(pollForGame, 2000);
+      }
+    }
+
+    function startGame() {
+      clearTimeout(pollTimer);
+      lobby.classList.add("hidden");
+      gameArea.classList.remove("hidden");
+      oppStatus.textContent = "Opponent found — good luck!";
+    }
+
+    // ── keyboard input ────────────────────────────────────────────────────────
+
+    document.addEventListener("keydown", handleKey);
+    document.querySelectorAll(".key").forEach(btn =>
+      btn.addEventListener("click", () => handleKey({ key: btn.dataset.key }))
+    );
+
+    function handleKey({ key }) {
+      if (!gameId) return;
+
+      if (key === "Backspace") {
+        currentWord = currentWord.slice(0, -1);
+        updateCurrentRow();
+      } else if (key === "Enter" && currentWord.length === 5) {
+        submitGuess();
+      } else if (/^[a-zA-Z]$/.test(key) && currentWord.length < 5) {
+        currentWord += key.toLowerCase();
+        updateCurrentRow();
+      }
+    }
+
+    function updateCurrentRow() {
+      const row   = document.getElementById(`row-${currentRow}`);
+      const tiles = row.querySelectorAll(".tile");
+      tiles.forEach((tile, i) => {
+        tile.textContent = currentWord[i]?.toUpperCase() ?? "";
+        tile.classList.toggle("filled", !!currentWord[i]);
+      });
+    }
+
+    // ── submit guess ──────────────────────────────────────────────────────────
+
+    async function submitGuess() {
+      const guess = currentWord;
+      currentWord = "";
+
+      const res  = await fetch("/api/move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ player_id: PLAYER_ID, guess }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        statusMsg.textContent = err.detail ?? "Invalid guess.";
+        currentWord = guess;
+        return;
+      }
+
+      const data = await res.json();
+      revealRow(currentRow, data.result);
+      updateKeyboard(guess, data.result);
+      currentRow++;
+
+      if (data.won) {
+        statusMsg.textContent = "You won! 🎉";
+        gameArea.querySelector("#keyboard").style.pointerEvents = "none";
+      } else if (data.game_over) {
+        statusMsg.textContent = `Game over! The word was: ${data.word.toUpperCase()}`;
+        gameArea.querySelector("#keyboard").style.pointerEvents = "none";
+      }
+    }
+
+    // ── board / keyboard updates ──────────────────────────────────────────────
+
+    function revealRow(rowIndex, result) {
+      const row   = document.getElementById(`row-${rowIndex}`);
+      const tiles = row.querySelectorAll(".tile");
+      tiles.forEach((tile, i) => {
+        setTimeout(() => tile.setAttribute("data-state", result[i]), i * 100);
+      });
+    }
+
+    function updateKeyboard(guess, result) {
+      const priority = { correct: 3, present: 2, absent: 1 };
+      guess.split("").forEach((ch, i) => {
+        const btn      = document.querySelector(`.key[data-key="${ch}"]`);
+        if (!btn) return;
+        const current  = btn.dataset.state;
+        if (!current || priority[result[i]] > priority[current]) {
+          btn.dataset.state = result[i];
+        }
+      });
+    }
+  </script>
 </body>
 </html>

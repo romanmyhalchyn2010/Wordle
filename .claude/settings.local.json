@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(pip install fastapi \"uvicorn[standard]\" websockets python-dotenv 2>&1)"
+      "PowerShell(pip install fastapi \"uvicorn[standard]\" websockets python-dotenv 2>&1)",
+      "PowerShell(Get-ChildItem -Path c:\\\\wordle -Recurse -Force | ForEach-Object { $_.FullName })"
     ]
   }
 }

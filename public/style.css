@@ -1,1 +1,210 @@
-/* Styles for the Wordle game UI — board grid, keyboard, tile colors, and layout */
+/* ── design tokens ──────────────────────────────────────────────────────────── */
+:root {
+  --color-correct:      #6aaa64;
+  --color-present:      #c9b458;
+  --color-absent:       #787c7e;
+  --color-tile-bg:      #ffffff;
+  --color-tile-border:  #d3d6da;
+  --color-tile-active:  #878a8c;
+  --color-key-bg:       #d3d6da;
+  --color-key-text:     #1a1a1b;
+  --color-bg:           #ffffff;
+  --color-text:         #1a1a1b;
+  --color-header-border:#d3d6da;
+
+  --tile-size: 62px;
+  --tile-gap:   5px;
+  --font-main: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ── reset / base ────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family:      var(--font-main);
+  background-color: var(--color-bg);
+  color:            var(--color-text);
+  display:          flex;
+  flex-direction:   column;
+  align-items:      center;
+  min-height:       100vh;
+  user-select:      none;
+}
+
+/* ── header ─────────────────────────────────────────────────────────────────── */
+header {
+  width:         100%;
+  max-width:     500px;
+  padding:       16px 0 12px;
+  text-align:    center;
+  border-bottom: 1px solid var(--color-header-border);
+  margin-bottom: 20px;
+}
+
+header h1 {
+  font-size:      2rem;
+  font-weight:    700;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+header .subtitle {
+  font-size:   0.75rem;
+  color:        var(--color-absent);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top:  4px;
+}
+
+/* ── main ────────────────────────────────────────────────────────────────────── */
+main {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            16px;
+  width:          100%;
+  max-width:      500px;
+  padding:        0 16px 40px;
+}
+
+.hidden { display: none !important; }
+
+/* ── lobby ───────────────────────────────────────────────────────────────────── */
+#lobby {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            16px;
+  margin-top:     40px;
+}
+
+.status {
+  font-size:  0.95rem;
+  color:       var(--color-absent);
+  text-align: center;
+}
+
+#find-game-btn {
+  padding:          12px 32px;
+  font-size:        1rem;
+  font-weight:      700;
+  letter-spacing:   1px;
+  text-transform:   uppercase;
+  background-color: var(--color-correct);
+  color:            #fff;
+  border:           none;
+  border-radius:    4px;
+  cursor:           pointer;
+  transition:       background-color 0.15s;
+}
+
+#find-game-btn:hover:not(:disabled) { background-color: #538d4e; }
+#find-game-btn:disabled             { opacity: 0.5; cursor: not-allowed; }
+
+/* ── opponent badge ──────────────────────────────────────────────────────────── */
+.opponent-badge {
+  font-size:        0.8rem;
+  letter-spacing:   1px;
+  text-transform:   uppercase;
+  background-color: #f0f0f0;
+  border-radius:    20px;
+  padding:          6px 16px;
+  color:            var(--color-absent);
+}
+
+/* ── board ───────────────────────────────────────────────────────────────────── */
+.board {
+  display:        grid;
+  grid-template-rows: repeat(6, var(--tile-size));
+  gap:            var(--tile-gap);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(5, var(--tile-size));
+  gap:     var(--tile-gap);
+}
+
+.tile {
+  width:           var(--tile-size);
+  height:          var(--tile-size);
+  border:          2px solid var(--color-tile-border);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       2rem;
+  font-weight:     700;
+  text-transform:  uppercase;
+  color:           var(--color-text);
+  transition:      border-color 0.05s, background-color 0.3s, color 0.3s;
+}
+
+.tile.filled {
+  border-color: var(--color-tile-active);
+  animation:    pop 0.1s ease;
+}
+
+/* revealed states */
+.tile[data-state="correct"] {
+  background-color: var(--color-correct);
+  border-color:     var(--color-correct);
+  color:            #fff;
+}
+.tile[data-state="present"] {
+  background-color: var(--color-present);
+  border-color:     var(--color-present);
+  color:            #fff;
+}
+.tile[data-state="absent"] {
+  background-color: var(--color-absent);
+  border-color:     var(--color-absent);
+  color:            #fff;
+}
+
+/* ── keyboard ────────────────────────────────────────────────────────────────── */
+.keyboard {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  margin-top:     8px;
+}
+
+.kb-row {
+  display: flex;
+  gap:     6px;
+}
+
+.key {
+  height:           58px;
+  min-width:        43px;
+  padding:          0 6px;
+  border:           none;
+  border-radius:    4px;
+  background-color: var(--color-key-bg);
+  color:            var(--color-key-text);
+  font-size:        0.85rem;
+  font-weight:      700;
+  text-transform:   uppercase;
+  cursor:           pointer;
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  transition:       background-color 0.2s, color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.key.wide { min-width: 65px; font-size: 0.75rem; }
+
+.key:hover { filter: brightness(0.92); }
+
+.key[data-state="correct"] { background-color: var(--color-correct); color: #fff; }
+.key[data-state="present"]  { background-color: var(--color-present);  color: #fff; }
+.key[data-state="absent"]   { background-color: var(--color-absent);   color: #fff; }
+
+/* ── animations ──────────────────────────────────────────────────────────────── */
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
