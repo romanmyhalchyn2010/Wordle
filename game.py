@@ -1,12 +1,40 @@
-import random  # used to pick a random word from WORD_LIST when no word is provided
+import random    # used only for the fallback word list if the API is unreachable
+import requests  # makes the HTTP request to the Random Words API
 
-# all valid answer words the game will randomly choose from
-WORD_LIST = [
-    "crane", "stare", "audio", "adieu", "later", "raise", "arose", "atone",
-    "irate", "snare", "blaze", "crisp", "dwarf", "fjord", "glyph", "jumpy",
-    "knack", "lusty", "mirth", "nymph", "oxide", "pixie", "quaff", "relax",
-    "stomp", "tryst", "ulcer", "vixen", "waltz", "xylem", "yearn", "zesty",
+# API endpoint that returns random Wordle-category words
+_API_URL = "https://random-words-api.kushcreates.com/api"
+
+# small fallback list used only when the API call fails (network error, timeout, etc.)
+_FALLBACK_WORDS = [
+    "crane", "stare", "audio", "raise", "arose",
+    "irate", "snare", "blaze", "crisp", "stomp",
 ]
+
+
+def fetch_random_word() -> str:
+    # request one 5-letter English Wordle word from the API
+    try:
+        response = requests.get(
+            _API_URL,
+            params={
+                "language": "en",    # English words only
+                "category": "wordle", # Wordle-safe words (common, 5-letter friendly)
+                "length":   5,        # must be exactly 5 letters to fit the board
+                "words":    1,        # we only need one word per game
+            },
+            timeout=5,  # don't block game creation for more than 5 seconds if the API is slow
+        )
+        response.raise_for_status()   # raise an exception for 4xx/5xx HTTP error responses
+        data = response.json()        # parse the JSON body — expected: [{"word": "...", ...}]
+        word = data[0].get("word")    # extract the word string from the first (and only) result object
+        if word and len(word) == 5:   # sanity-check: must be non-empty and exactly 5 letters
+            return word.lower()       # normalise to lowercase before returning
+    except Exception:
+        pass  # API unreachable, timed out, or returned unexpected data — fall through to the backup
+
+    # fallback: pick a random word from the local list so the game can still start
+    return random.choice(_FALLBACK_WORDS)
+
 
 # tile state constants — sent to the frontend to colour each cell
 TILE_CORRECT = "correct"  # letter is in the word AND in the right position (green)
@@ -20,7 +48,7 @@ WORD_LENGTH = 5  # every Wordle word is exactly 5 letters
 class WordleGame:
     def __init__(self, word: str | None = None):
         # pick the secret word: use the provided word or choose one at random
-        self.word = (word or random.choice(WORD_LIST)).lower()
+        self.word = word.lower() if word else fetch_random_word()  # use the provided word or fetch one from the API
         self.players: list[str] = []    # stores up to 2 player IDs in join order
         self.guesses: list[dict] = []   # every guess from both players, in submission order
         self.game_over = False          # becomes True when someone wins or both players exhaust their guesses

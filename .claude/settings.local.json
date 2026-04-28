@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "PowerShell(pip install fastapi \"uvicorn[standard]\" websockets python-dotenv 2>&1)",
-      "PowerShell(Get-ChildItem -Path c:\\\\wordle -Recurse -Force | ForEach-Object { $_.FullName })"
+      "PowerShell(Get-ChildItem -Path c:\\\\wordle -Recurse -Force | ForEach-Object { $_.FullName })",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(pip install *)",
+      "Bash(python -c \"from game import fetch_random_word; print\\(fetch_random_word\\(\\)\\)\")"
     ]
   }
 }
