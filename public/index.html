@@ -67,84 +67,87 @@
 
     </section>
 
-    <!-- ── Game area: hidden until a match is found ── -->
-    <section id="game-area" class="hidden"><!-- "hidden" class is removed by JS when a game starts -->
+    <!-- ── Game area: 3-column layout — hidden until a match is found ── -->
+    <section id="game-area" class="hidden">
 
-      <div class="boards-container"><!-- flex row that holds both boards side by side -->
+      <!-- left dark panel: your badge + live guess counter -->
+      <aside class="game-panel game-panel--left">
+        <span class="tag tag--safety panel-badge">You</span>
+        <div class="panel-count">
+          <span id="my-guess-count" class="panel-count__val">0</span><!-- updated by JS after each guess -->
+          <span class="panel-count__label">/ 6 guesses</span>
+        </div>
+      </aside>
 
-        <!-- Your board: shows your own guesses with letters and colours -->
-        <div class="board-col"><!-- vertical column wrapper for label + board -->
-          <p class="board-label">You</p><!-- label above the board -->
-          <div id="board" class="board"><!-- 6-row × 5-column guess grid for the local player -->
-            <!-- each row has 5 tiles; JS writes letters and colours into them -->
-            <div class="row" id="row-0"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="row-1"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="row-2"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="row-3"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="row-4"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="row-5"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+      <!-- center: your board, result message, and keyboard -->
+      <div class="game-center">
+        <div id="board" class="board">
+          <div class="row" id="row-0"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="row-1"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="row-2"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="row-3"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="row-4"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="row-5"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+        </div>
+
+        <!-- win/loss/error message shown in the centre below the board -->
+        <p id="game-status" class="game-status"></p>
+
+        <!-- on-screen keyboard inside a dark premium card -->
+        <div id="keyboard" class="keyboard">
+          <div class="kb-row">
+            <button class="key" data-key="q">Q</button>
+            <button class="key" data-key="w">W</button>
+            <button class="key" data-key="e">E</button>
+            <button class="key" data-key="r">R</button>
+            <button class="key" data-key="t">T</button>
+            <button class="key" data-key="y">Y</button>
+            <button class="key" data-key="u">U</button>
+            <button class="key" data-key="i">I</button>
+            <button class="key" data-key="o">O</button>
+            <button class="key" data-key="p">P</button>
           </div>
-        </div>
-
-        <!-- Opponent board: shows the opponent's progress as colours only — no letters revealed -->
-        <div class="board-col">
-          <p class="board-label">Opponent</p><!-- label above the opponent's board -->
-          <div id="opponent-board" class="board opp-board"><!-- opp-board overrides tile size to be smaller -->
-            <!-- tiles here never get text content; only data-state is set to colour them -->
-            <div class="row" id="opp-row-0"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="opp-row-1"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="opp-row-2"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="opp-row-3"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="opp-row-4"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-            <div class="row" id="opp-row-5"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="kb-row">
+            <button class="key" data-key="a">A</button>
+            <button class="key" data-key="s">S</button>
+            <button class="key" data-key="d">D</button>
+            <button class="key" data-key="f">F</button>
+            <button class="key" data-key="g">G</button>
+            <button class="key" data-key="h">H</button>
+            <button class="key" data-key="j">J</button>
+            <button class="key" data-key="k">K</button>
+            <button class="key" data-key="l">L</button>
           </div>
-        </div>
-
-      </div><!-- end .boards-container -->
-
-      <!-- in-game status message: shows win/loss/error text during gameplay -->
-      <p id="game-status" class="game-status"></p>
-
-      <!-- On-screen keyboard: lets players type on touch devices; also shows letter colour hints -->
-      <div id="keyboard" class="keyboard">
-        <!-- top row: Q through P -->
-        <div class="kb-row">
-          <button class="key" data-key="q">Q</button>
-          <button class="key" data-key="w">W</button>
-          <button class="key" data-key="e">E</button>
-          <button class="key" data-key="r">R</button>
-          <button class="key" data-key="t">T</button>
-          <button class="key" data-key="y">Y</button>
-          <button class="key" data-key="u">U</button>
-          <button class="key" data-key="i">I</button>
-          <button class="key" data-key="o">O</button>
-          <button class="key" data-key="p">P</button>
-        </div>
-        <!-- middle row: A through L -->
-        <div class="kb-row">
-          <button class="key" data-key="a">A</button>
-          <button class="key" data-key="s">S</button>
-          <button class="key" data-key="d">D</button>
-          <button class="key" data-key="f">F</button>
-          <button class="key" data-key="g">G</button>
-          <button class="key" data-key="h">H</button>
-          <button class="key" data-key="j">J</button>
-          <button class="key" data-key="k">K</button>
-          <button class="key" data-key="l">L</button>
-        </div>
-        <!-- bottom row: Enter, Z through M, Backspace -->
-        <div class="kb-row">
-          <button class="key wide" data-key="Enter">ENTER</button><!-- wide key: submits the current guess -->
-          <button class="key" data-key="z">Z</button>
-          <button class="key" data-key="x">X</button>
-          <button class="key" data-key="c">C</button>
-          <button class="key" data-key="v">V</button>
-          <button class="key" data-key="b">B</button>
-          <button class="key" data-key="n">N</button>
-          <button class="key" data-key="m">M</button>
-          <button class="key wide" data-key="Backspace">⌫</button><!-- wide key: deletes the last typed letter -->
+          <div class="kb-row">
+            <button class="key wide" data-key="Enter">ENTER</button>
+            <button class="key" data-key="z">Z</button>
+            <button class="key" data-key="x">X</button>
+            <button class="key" data-key="c">C</button>
+            <button class="key" data-key="v">V</button>
+            <button class="key" data-key="b">B</button>
+            <button class="key" data-key="n">N</button>
+            <button class="key" data-key="m">M</button>
+            <button class="key wide" data-key="Backspace">⌫</button>
+          </div>
         </div>
       </div>
+
+      <!-- right dark panel: opponent board + their live guess counter -->
+      <aside class="game-panel game-panel--right">
+        <span class="tag tag--light panel-badge">Opponent</span>
+        <div id="opponent-board" class="board opp-board"><!-- colour-only tiles, no letters -->
+          <div class="row" id="opp-row-0"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="opp-row-1"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="opp-row-2"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="opp-row-3"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="opp-row-4"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          <div class="row" id="opp-row-5"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+        </div>
+        <div class="panel-count">
+          <span id="opp-guess-count" class="panel-count__val">0</span><!-- updated by JS when opponent grid refreshes -->
+          <span class="panel-count__label">/ 6 guesses</span>
+        </div>
+      </aside>
 
     </section>
   </main>
@@ -160,12 +163,14 @@
     let gameEnded   = false;  // flag to prevent endGame() from firing twice (e.g. from poll + submitGuess)
 
     // cache DOM references so we don't query the document on every keystroke
-    const lobby      = document.getElementById("lobby");
-    const gameArea   = document.getElementById("game-area");
-    const statusMsg  = document.getElementById("status-msg");    // lobby status text
-    const findBtn    = document.getElementById("find-game-btn"); // "Find Game" button
-    const gameStatus = document.getElementById("game-status");   // in-game status text
-    const keyboard   = document.getElementById("keyboard");      // keyboard container
+    const lobby        = document.getElementById("lobby");
+    const gameArea     = document.getElementById("game-area");
+    const statusMsg    = document.getElementById("status-msg");      // lobby status text
+    const findBtn      = document.getElementById("find-game-btn");   // "Find Game" button
+    const gameStatus   = document.getElementById("game-status");     // in-game result/error text
+    const keyboard     = document.getElementById("keyboard");        // keyboard container
+    const myGuessCount  = document.getElementById("my-guess-count"); // left panel counter
+    const oppGuessCount = document.getElementById("opp-guess-count");// right panel counter
 
 
     // ── matchmaking ───────────────────────────────────────────────────────────
@@ -306,7 +311,8 @@
       revealRow(currentRow, data.result);            // colour this row's tiles based on the server response
       updateKeyboard(guess, data.result);            // update key colours so the player knows which letters they've used
       updateOpponentBoard(data.opponent_grid || []); // immediately apply the opponent grid that came bundled in this response
-      currentRow++; // advance to the next row for the player's next guess
+      currentRow++;                                  // advance to the next row for the player's next guess
+      myGuessCount.textContent = currentRow;         // update the left-panel counter to reflect the new total
 
       if (data.won) {
         endGame("You won! 🎉");                                          // this guess solved the word
@@ -339,6 +345,7 @@
           tiles.forEach(tile => tile.removeAttribute("data-state"));
         }
       }
+      oppGuessCount.textContent = grid.length; // keep the right-panel counter in sync with opponent progress
     }
 
     function updateKeyboard(guess, result) {
