@@ -113,18 +113,7 @@ main {
   overflow:        hidden;
 }
 
-.lobby-left::before {
-  content:          '';
-  position:         absolute;
-  inset:            0;
-  background-image: linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
-  background-size:  40px 40px;
-  pointer-events:   none;
-  z-index:          0;
-}
-
-.lobby-left > * { position: relative; z-index: 1; }
+.lobby-left > *:not(.topo-bg) { position: relative; z-index: 1; }
 
 .lobby-right {
   display:         flex;
@@ -138,18 +127,7 @@ main {
   overflow:        hidden;
 }
 
-.lobby-right::before {
-  content:          '';
-  position:         absolute;
-  inset:            0;
-  background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size:  40px 40px;
-  pointer-events:   none;
-  z-index:          0;
-}
-
-.lobby-right > * { position: relative; z-index: 1; }
+.lobby-right > *:not(.topo-bg) { position: relative; z-index: 1; }
 
 /* ── tag / badge ── */
 .tag {
@@ -304,19 +282,7 @@ main {
   overflow:        hidden;
 }
 
-/* subtle white dot-grid on dark panels */
-.game-panel::before {
-  content:          '';
-  position:         absolute;
-  inset:            0;
-  background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size:  40px 40px;
-  pointer-events:   none;
-  z-index:          0;
-}
-
-.game-panel > * { position: relative; z-index: 1; }
+.game-panel > *:not(.topo-bg) { position: relative; z-index: 1; }
 
 .game-panel--left  { border-right: var(--border); }
 .game-panel--right { border-left:  var(--border); }
@@ -362,19 +328,7 @@ main {
   position:        relative;
 }
 
-/* subtle dot-grid on the white center panel */
-.game-center::before {
-  content:          '';
-  position:         absolute;
-  inset:            0;
-  background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
-  background-size:  40px 40px;
-  pointer-events:   none;
-  z-index:          0;
-}
-
-.game-center > * { position: relative; z-index: 1; }
+.game-center > *:not(.topo-bg) { position: relative; z-index: 1; }
 
 /* ── in-game result message ── */
 .game-status {
@@ -500,45 +454,7 @@ main {
   color:         rgba(255,255,255,0.35);
 }
 
-/* ── cursor spotlight — amplifies grid pattern near the cursor ── */
-
-/* Light backgrounds: darker grid in the spotlight radius */
-.lobby-left::after,
-.game-center::after {
-  content:               '';
-  position:              absolute;
-  inset:                 0;
-  pointer-events:        none;
-  z-index:               0;
-  background-image:      linear-gradient(rgba(0,0,0,0.5) 1px, transparent 1px),
-                         linear-gradient(90deg, rgba(0,0,0,0.5) 1px, transparent 1px);
-  background-size:       40px 40px;
-  mask-image:            radial-gradient(circle 220px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 80%);
-  mask-size:             100% 100%;
-  mask-repeat:           no-repeat;
-  -webkit-mask-image:    radial-gradient(circle 220px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 80%);
-  -webkit-mask-size:     100% 100%;
-  -webkit-mask-repeat:   no-repeat;
-}
-
-/* Dark backgrounds: lighter grid in the spotlight radius */
-.lobby-right::after,
-.game-panel::after {
-  content:               '';
-  position:              absolute;
-  inset:                 0;
-  pointer-events:        none;
-  z-index:               0;
-  background-image:      linear-gradient(rgba(255,255,255,0.45) 1px, transparent 1px),
-                         linear-gradient(90deg, rgba(255,255,255,0.45) 1px, transparent 1px);
-  background-size:       40px 40px;
-  mask-image:            radial-gradient(circle 220px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 80%);
-  mask-size:             100% 100%;
-  mask-repeat:           no-repeat;
-  -webkit-mask-image:    radial-gradient(circle 220px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 80%);
-  -webkit-mask-size:     100% 100%;
-  -webkit-mask-repeat:   no-repeat;
-}
+/* .topo-bg canvases are inserted by JS — no pseudo-element backgrounds needed */
 
 /* ── animations ── */
 @keyframes pop {

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=5" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
+  <link rel="stylesheet" href="style.css?v=6" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
 </head>
 <body>
 
@@ -225,10 +225,10 @@
     }
 
     function startGame() {
-      clearTimeout(pollTimer);                      // stop the matchmaking poll
-      lobby.classList.add("hidden");                // hide the lobby UI
-      gameArea.classList.remove("hidden");          // reveal the game board and keyboard
-      // begin polling every 1.5 s to keep the opponent's grid updated during gameplay
+      clearTimeout(pollTimer);
+      lobby.classList.add("hidden");
+      gameArea.classList.remove("hidden");
+      _topo.initGamePanels(); // build topo canvases for game panels now that they're visible
       pollTimer = setInterval(pollGameState, 1500);
     }
 
@@ -446,38 +446,160 @@
     }
 
 
-    // ── cursor spotlight ──────────────────────────────────────────────────────
-    // On every mousemove, update --mx/--my on each background element with the
-    // cursor position in that element's local coordinate space.
-    // When the cursor is outside an element the coords go negative, pushing the
-    // radial-gradient mask off-screen so the spotlight disappears automatically.
+    // ── topographic background + lerp spotlight ───────────────────────────────
 
-    const spotlightEls = [
-      document.querySelector(".lobby-left"),
-      document.querySelector(".lobby-right"),
-      document.querySelector(".game-panel--left"),
-      document.querySelector(".game-panel--right"),
-      document.querySelector(".game-center"),
-    ].filter(Boolean);
+    const _topo = (() => {
+      // Compact Perlin noise (seeded once per page load)
+      const _P = (() => {
+        const p = Array.from({ length: 256 }, (_, i) => i);
+        for (let i = 255; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [p[i], p[j]] = [p[j], p[i]]; }
+        return new Uint8Array([...p, ...p]);
+      })();
+      const _fd = t => t * t * t * (t * (t * 6 - 15) + 10);
+      const _lp = (a, b, t) => a + (b - a) * t;
+      const _gr = (h, x, y) => { h &= 3; return (h & 1 ? -x : x) + (h & 2 ? -y : y); };
+      function _noise(x, y) {
+        const xi = x | 0, yi = y | 0, xf = x - xi, yf = y - yi;
+        const u = _fd(xf), v = _fd(yf);
+        const aa = _P[_P[xi & 255] + (yi & 255)],   ab = _P[_P[xi & 255] + (yi + 1 & 255)];
+        const ba = _P[_P[xi + 1 & 255] + (yi & 255)], bb = _P[_P[xi + 1 & 255] + (yi + 1 & 255)];
+        return _lp(_lp(_gr(aa, xf, yf), _gr(ba, xf - 1, yf), u),
+                   _lp(_gr(ab, xf, yf - 1), _gr(bb, xf - 1, yf - 1), u), v);
+      }
+      function fbm(x, y) {
+        return _noise(x, y) * 0.5 + _noise(x * 2, y * 2) * 0.25 + _noise(x * 4, y * 4) * 0.125;
+      }
 
-    // target = where the cursor actually is; current = where the spotlight is (lags behind)
-    let mouseX = -999, mouseY = -999;
-    const spotPos = spotlightEls.map(() => ({ x: -999, y: -999 }));
-    const LERP = 0.1; // 0 = frozen, 1 = instant — 0.1 gives a ~10-frame lag
+      // Marching squares — edges: 0=top 1=right 2=bottom 3=left
+      // Corners: bit3=TL bit2=TR bit1=BR bit0=BL
+      const MS = [
+        [],[[3,2]],[[2,1]],[[3,1]],[[0,1]],[[3,0],[2,1]],[[0,2]],[[3,0]],
+        [[0,3]],[[0,2]],[[0,1],[2,3]],[[0,1]],[[3,1]],[[2,1]],[[3,2]],[],
+      ];
 
-    document.addEventListener("mousemove", (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+      function getSegs(field, rows, cols, G, t) {
+        const out = [];
+        for (let r = 0; r < rows - 1; r++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const a = field[r * cols + c], b = field[r * cols + c + 1];
+            const cv = field[(r + 1) * cols + c + 1], d = field[(r + 1) * cols + c];
+            const cfg = (a > t ? 8 : 0) | (b > t ? 4 : 0) | (cv > t ? 2 : 0) | (d > t ? 1 : 0);
+            if (cfg === 0 || cfg === 15) continue;
+            const ip = (va, vb) => vb === va ? 0.5 : Math.max(0, Math.min(1, (t - va) / (vb - va)));
+            const e = [
+              [(c + ip(a, b)) * G,   r * G             ],  // 0 top
+              [(c + 1) * G,          (r + ip(b, cv)) * G], // 1 right
+              [(c + ip(d, cv)) * G,  (r + 1) * G       ],  // 2 bottom
+              [c * G,                (r + ip(a, d)) * G ], // 3 left
+            ];
+            for (const pair of MS[cfg]) out.push([e[pair[0]], e[pair[1]]]);
+          }
+        }
+        return out;
+      }
 
-    (function animateSpotlight() {
-      spotlightEls.forEach((el, i) => {
-        const r  = el.getBoundingClientRect();
-        const tx = mouseX - r.left;
-        const ty = mouseY - r.top;
-        spotPos[i].x += (tx - spotPos[i].x) * LERP;
-        spotPos[i].y += (ty - spotPos[i].y) * LERP;
-        el.style.setProperty("--mx", `${spotPos[i].x}px`);
-        el.style.setProperty("--my", `${spotPos[i].y}px`);
-      });
-      requestAnimationFrame(animateSpotlight);
+      const GRID = 8, N = 14, FREQ = 0.0028;
+      const C_LT = ['#c1121f','#023e8a','#1b7a42','#b5660a','#7b2d8b','#0a5e78','#6a4c93','#c45e00'];
+      const C_DK = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#da77f2','#ff9f1c','#63d9f7','#ffb347'];
+
+      const instances = [];
+
+      function buildBase(el, isDark) {
+        const W = el.offsetWidth, H = el.offsetHeight;
+        if (!W || !H) return null;
+        const cols = Math.ceil(W / GRID) + 2, rows = Math.ceil(H / GRID) + 2;
+        const ox = Math.random() * 500, oy = Math.random() * 500;
+        const field = new Float32Array(rows * cols);
+        let mn = Infinity, mx = -Infinity;
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          const v = fbm(c * GRID * FREQ + ox, r * GRID * FREQ + oy);
+          field[r * cols + c] = v; mn = Math.min(mn, v); mx = Math.max(mx, v);
+        }
+        const rng = mx - mn || 1;
+        for (let i = 0; i < field.length; i++) field[i] = (field[i] - mn) / rng;
+
+        const off = document.createElement('canvas');
+        off.width = W; off.height = H;
+        const octx = off.getContext('2d');
+        const pal = isDark ? C_DK : C_LT;
+        octx.lineWidth = 1.2;
+        for (let l = 0; l < N; l++) {
+          const segs = getSegs(field, rows, cols, GRID, (l + 1) / (N + 1));
+          octx.beginPath();
+          octx.strokeStyle = pal[l % pal.length];
+          octx.globalAlpha = isDark ? 0.45 : 0.38;
+          for (const [p0, p1] of segs) { octx.moveTo(p0[0], p0[1]); octx.lineTo(p1[0], p1[1]); }
+          octx.stroke();
+        }
+        octx.globalAlpha = 1;
+        return { W, H, off };
+      }
+
+      function initEl(el, isDark) {
+        const cv = document.createElement('canvas');
+        cv.className = 'topo-bg';
+        Object.assign(cv.style, { position:'absolute', inset:'0', width:'100%', height:'100%',
+                                   pointerEvents:'none', zIndex:'0' });
+        el.insertBefore(cv, el.firstChild);
+        const ctx = cv.getContext('2d');
+        let base = null, sx = -9999, sy = -9999;
+
+        function tryBuild() {
+          base = buildBase(el, isDark);
+          if (base) { cv.width = base.W; cv.height = base.H; }
+        }
+        function render() {
+          if (!base) { tryBuild(); if (!base) return; }
+          const { W, H, off } = base;
+          ctx.clearRect(0, 0, W, H);
+          ctx.drawImage(off, 0, 0);
+          if (sx > -1000) {
+            const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 240);
+            if (isDark) {
+              g.addColorStop(0, 'rgba(255,255,255,0.10)'); g.addColorStop(0.5, 'rgba(255,255,255,0.04)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+            } else {
+              g.addColorStop(0, 'rgba(0,0,0,0.07)'); g.addColorStop(0.5, 'rgba(0,0,0,0.025)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+            }
+            ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+          }
+        }
+
+        tryBuild();
+        window.addEventListener('resize', tryBuild);
+        const inst = { el, render, setSpot(x, y) { sx = x; sy = y; } };
+        instances.push(inst);
+      }
+
+      // Lobby panels ready immediately; game panels deferred until visible
+      [{ s:'.lobby-left', d:false }, { s:'.lobby-right', d:true }]
+        .forEach(({ s, d }) => { const el = document.querySelector(s); if (el) initEl(el, d); });
+
+      function initGamePanels() {
+        [{ s:'.game-panel--left', d:true }, { s:'.game-panel--right', d:true }, { s:'.game-center', d:false }]
+          .forEach(({ s, d }) => {
+            const el = document.querySelector(s);
+            if (el && !el.dataset.topoInit) { el.dataset.topoInit = '1'; initEl(el, d); }
+          });
+      }
+
+      // Lerp spotlight RAF loop
+      let mouseX = -9999, mouseY = -9999;
+      const LERP = 0.1;
+      const spotPos = [];
+      document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+      (function loop() {
+        while (spotPos.length < instances.length) spotPos.push({ x: -9999, y: -9999 });
+        instances.forEach(({ el, render, setSpot }, i) => {
+          const r = el.getBoundingClientRect();
+          spotPos[i].x += (mouseX - r.left - spotPos[i].x) * LERP;
+          spotPos[i].y += (mouseY - r.top  - spotPos[i].y) * LERP;
+          setSpot(spotPos[i].x, spotPos[i].y);
+          render();
+        });
+        requestAnimationFrame(loop);
+      })();
+
+      return { initGamePanels };
     })();
   </script>
 </body>
