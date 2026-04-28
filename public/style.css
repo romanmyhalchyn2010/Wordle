@@ -505,31 +505,39 @@ main {
 /* Light backgrounds: darker grid in the spotlight radius */
 .lobby-left::after,
 .game-center::after {
-  content:          '';
-  position:         absolute;
-  inset:            0;
-  pointer-events:   none;
-  z-index:          0;
-  background-image: linear-gradient(rgba(0,0,0,0.22) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(0,0,0,0.22) 1px, transparent 1px);
-  background-size:  40px 40px;
-  mask-image:         radial-gradient(circle 160px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 70%);
-  -webkit-mask-image: radial-gradient(circle 160px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 70%);
+  content:               '';
+  position:              absolute;
+  inset:                 0;
+  pointer-events:        none;
+  z-index:               0;
+  background-image:      linear-gradient(rgba(0,0,0,0.5) 1px, transparent 1px),
+                         linear-gradient(90deg, rgba(0,0,0,0.5) 1px, transparent 1px);
+  background-size:       40px 40px;
+  mask-image:            radial-gradient(circle 220px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 80%);
+  mask-size:             100% 100%;
+  mask-repeat:           no-repeat;
+  -webkit-mask-image:    radial-gradient(circle 220px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 80%);
+  -webkit-mask-size:     100% 100%;
+  -webkit-mask-repeat:   no-repeat;
 }
 
 /* Dark backgrounds: lighter grid in the spotlight radius */
 .lobby-right::after,
 .game-panel::after {
-  content:          '';
-  position:         absolute;
-  inset:            0;
-  pointer-events:   none;
-  z-index:          0;
-  background-image: linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
-  background-size:  40px 40px;
-  mask-image:         radial-gradient(circle 160px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 70%);
-  -webkit-mask-image: radial-gradient(circle 160px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 70%);
+  content:               '';
+  position:              absolute;
+  inset:                 0;
+  pointer-events:        none;
+  z-index:               0;
+  background-image:      linear-gradient(rgba(255,255,255,0.45) 1px, transparent 1px),
+                         linear-gradient(90deg, rgba(255,255,255,0.45) 1px, transparent 1px);
+  background-size:       40px 40px;
+  mask-image:            radial-gradient(circle 220px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 80%);
+  mask-size:             100% 100%;
+  mask-repeat:           no-repeat;
+  -webkit-mask-image:    radial-gradient(circle 220px at var(--mx, -999px) var(--my, -999px), black 0%, transparent 80%);
+  -webkit-mask-size:     100% 100%;
+  -webkit-mask-repeat:   no-repeat;
 }
 
 /* ── animations ── */
