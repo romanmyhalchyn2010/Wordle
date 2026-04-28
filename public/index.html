@@ -4,22 +4,67 @@
   <meta charset="UTF-8" /><!-- tell the browser to use UTF-8 so special characters render correctly -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" /><!-- make the layout scale correctly on mobile -->
   <title>Wordle Multiplayer</title>
+  <!-- Axis Industrial typefaces: Space Grotesk (display) + JetBrains Mono (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" /><!-- load our stylesheet -->
 </head>
 <body>
 
-  <!-- ── page header ── -->
+  <!-- ── page header — slim nav bar ── -->
   <header>
-    <h1>WORDLE</h1><!-- game title -->
-    <p class="subtitle">Multiplayer</p><!-- indicates this is the multiplayer version -->
+    <span class="header-brand">WORDLE</span>
+    <span class="header-tagline">
+      <span class="header-dot"></span>Real-Time Multiplayer
+    </span>
   </header>
 
   <main>
 
-    <!-- ── Lobby: shown before a game starts ── -->
+    <!-- ── Lobby: two-column hero, fills the viewport ── -->
     <section id="lobby">
-      <p id="status-msg" class="status">Find an opponent to start playing.</p><!-- updated by JS to show search/wait state -->
-      <button id="find-game-btn">Find Game</button><!-- clicking this starts matchmaking -->
+
+      <!-- left column: badge, headline, descriptor, CTA -->
+      <div class="lobby-left">
+        <span class="tag tag--safety">1v1 &middot; Live</span>
+
+        <h2 class="lobby-title">
+          <span>Guess.</span>
+          <span>Beat.</span>
+          <span class="lobby-title__accent">Win.</span>
+        </h2>
+
+        <p class="lobby-desc">Five letters. Six attempts.<br>One opponent. No mercy.</p>
+
+        <p id="status-msg" class="status">Find an opponent to start playing.</p>
+
+        <button id="find-game-btn">Find Game</button>
+      </div>
+
+      <!-- right column: dark panel with stats + rules -->
+      <div class="lobby-right">
+        <div class="lobby-stats">
+          <div class="lobby-stat">
+            <span class="lobby-stat__val">5</span>
+            <span class="lobby-stat__label">Letters per word</span>
+          </div>
+          <div class="lobby-stat">
+            <span class="lobby-stat__val">6</span>
+            <span class="lobby-stat__label">Max guesses</span>
+          </div>
+          <div class="lobby-stat">
+            <span class="lobby-stat__val">1v1</span>
+            <span class="lobby-stat__label">Real-time</span>
+          </div>
+        </div>
+        <div class="lobby-rules">
+          <p class="lobby-rule">Two players. One secret word.</p>
+          <p class="lobby-rule">Guess it before your opponent does.</p>
+          <p class="lobby-rule">See their progress in real time.</p>
+        </div>
+      </div>
+
     </section>
 
     <!-- ── Game area: hidden until a match is found ── -->

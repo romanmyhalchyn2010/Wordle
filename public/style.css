@@ -1,271 +1,471 @@
-/* ── design tokens ───────────────────────────────────────────────────────────────
-   CSS custom properties defined here are shared across the whole stylesheet.
-   Changing a value here updates every rule that references it.               */
-:root {
-  --color-correct:      #6aaa64; /* green  — letter is in the right position */
-  --color-present:      #c9b458; /* yellow — letter is in the word but wrong position */
-  --color-absent:       #787c7e; /* gray   — letter is not in the word */
-  --color-tile-bg:      #ffffff; /* default tile background before any guess */
-  --color-tile-border:  #d3d6da; /* border colour for empty tiles */
-  --color-tile-active:  #878a8c; /* border colour when a tile has a letter typed into it */
-  --color-key-bg:       #d3d6da; /* default key background before the letter is guessed */
-  --color-key-text:     #1a1a1b; /* key label text colour */
-  --color-bg:           #ffffff; /* page background */
-  --color-text:         #1a1a1b; /* primary text colour */
-  --color-header-border:#d3d6da; /* thin line under the header */
+/* ── Axis Industrial design language ─────────────────────────────────────────
+   Palette, border system, and button style derived from TemplateMo 619.
+   JetBrains Mono (body/mono) + Space Grotesk (display) loaded via index.html. */
 
-  --tile-size: 62px; /* width and height of each tile on the player's own board */
-  --tile-gap:   5px; /* gap between tiles within a row, and between rows */
-  --font-main: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif; /* Wordle's font stack */
+:root {
+  --base:     #FFFFFF;
+  --ink:      #000000;
+  --safety:   #FF3E00;
+  --surface:  #F5F5F0;
+  --header-h: 60px;
+
+  /* Wordle gameplay tile colours — kept as semantic signals */
+  --color-correct: #6aaa64;
+  --color-present: #c9b458;
+  --color-absent:  #787c7e;
+
+  /* Border system — zero border-radius (except the CTA button) */
+  --border:      4px solid var(--ink);
+  --border-thin: 2px solid var(--ink);
+
+  /* Tile sizing */
+  --tile-size: 62px;
+  --tile-gap:   5px;
+
+  /* Typography */
+  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+  --font-display: 'Space Grotesk', Arial, sans-serif;
 }
 
-/* ── reset ───────────────────────────────────────────────────────────────────────
-   Remove default browser margin/padding and use border-box sizing everywhere
-   so padding doesn't unexpectedly increase element dimensions.               */
+/* ── reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── body ────────────────────────────────────────────────────────────────────────
-   Centre everything horizontally and stack sections vertically down the page. */
 body {
-  font-family:      var(--font-main);
-  background-color: var(--color-bg);
-  color:            var(--color-text);
-  display:          flex;
-  flex-direction:   column;  /* stack header and main vertically */
-  align-items:      center;  /* horizontally centre all children */
-  min-height:       100vh;   /* always fill the full viewport even with little content */
-  user-select:      none;    /* prevent text selection so clicking keys doesn't highlight text */
+  font-family:     var(--font-mono);
+  background:      var(--base);
+  color:           var(--ink);
+  display:         flex;
+  flex-direction:  column;
+  align-items:     stretch;
+  min-height:      100vh;
+  user-select:     none;
 }
 
-/* ── header ──────────────────────────────────────────────────────────────────────
-   Thin bar at the top with the game title, matching the classic Wordle look.  */
+/* ── header — slim nav bar ── */
 header {
-  width:         100%;
-  max-width:     500px;         /* cap width so the border doesn't stretch too wide */
-  padding:       16px 0 12px;
-  text-align:    center;
-  border-bottom: 1px solid var(--color-header-border); /* subtle dividing line */
-  margin-bottom: 20px;          /* space between header and the content below */
+  width:           100%;
+  height:          var(--header-h);
+  flex-shrink:     0;
+  background:      var(--ink);
+  color:           var(--base);
+  border-bottom:   3px solid var(--safety);
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         0 40px;
 }
 
-header h1 {
-  font-size:      2rem;
+.header-brand {
+  font-family:    var(--font-display);
+  font-size:      1.5rem;
   font-weight:    700;
-  letter-spacing: 6px;          /* wide spacing between letters like the original Wordle logo */
+  letter-spacing: 4px;
   text-transform: uppercase;
 }
 
-header .subtitle {
-  font-size:      0.75rem;
-  color:          var(--color-absent);  /* muted gray so it doesn't compete with the title */
-  letter-spacing: 3px;
+.header-tagline {
+  font-family:    var(--font-mono);
+  font-size:      0.6rem;
   text-transform: uppercase;
-  margin-top:     4px;
+  letter-spacing: 0.2em;
+  color:          rgba(255,255,255,0.5);
+  display:        flex;
+  align-items:    center;
+  gap:            8px;
 }
 
-/* ── main ────────────────────────────────────────────────────────────────────────
-   Vertical flex column that centres both the lobby and the game sections.     */
+/* live indicator dot */
+.header-dot {
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    #00FF66;
+  flex-shrink:   0;
+  animation:     pulse 2s ease-in-out infinite;
+}
+
+/* ── main ── */
 main {
+  flex:           1;
   display:        flex;
   flex-direction: column;
-  align-items:    center;
-  gap:            16px;         /* space between each child section */
-  width:          100%;
-  max-width:      660px;        /* wide enough for two boards side-by-side plus the keyboard */
-  padding:        0 16px 40px; /* side padding on small screens; bottom padding for breathing room */
 }
 
-/* utility class — toggled by JS to show/hide sections */
 .hidden { display: none !important; }
 
-/* ── lobby ───────────────────────────────────────────────────────────────────────
-   Centred column shown before a game starts.                                  */
+/* ── lobby — two-column, full-viewport grid ── */
 #lobby {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  height:                calc(100vh - var(--header-h));
+}
+
+/* left column: badge, headline, descriptor, status, CTA */
+.lobby-left {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     flex-start;
+  justify-content: center;
+  gap:             28px;
+  padding:         56px 64px;
+  border-right:    var(--border);
+  position:        relative;
+  overflow:        hidden;
+}
+
+/* subtle dot-grid behind the white left panel */
+.lobby-left::before {
+  content:          '';
+  position:         absolute;
+  inset:            0;
+  background-image: linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size:  40px 40px;
+  pointer-events:   none;
+  z-index:          0;
+}
+
+.lobby-left > * { position: relative; z-index: 1; }
+
+/* right column: dark panel with big numbers and rule list */
+.lobby-right {
+  display:         flex;
+  flex-direction:  column;
+  justify-content: center;
+  gap:             48px;
+  padding:         56px 64px;
+  background:      var(--ink);
+  color:           var(--base);
+  position:        relative;
+  overflow:        hidden;
+}
+
+/* faint white grid on the dark right panel */
+.lobby-right::before {
+  content:          '';
+  position:         absolute;
+  inset:            0;
+  background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size:  40px 40px;
+  pointer-events:   none;
+  z-index:          0;
+}
+
+.lobby-right > * { position: relative; z-index: 1; }
+
+/* ── tag / badge — from Axis Industrial .tag ── */
+.tag {
+  display:        inline-block;
+  font-family:    var(--font-mono);
+  font-size:      0.6rem;
+  font-weight:    500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  padding:        0.35em 0.85em;
+  border:         var(--border-thin);
+  background:     var(--base);
+}
+
+.tag--safety {
+  background:   var(--safety);
+  color:        var(--base);
+  border-color: var(--safety);
+}
+
+/* ── lobby headline — compact and tight ── */
+.lobby-title {
+  font-family:    var(--font-display);
+  font-size:      clamp(2.4rem, 4.5vw, 3.8rem);
+  font-weight:    700;
+  text-transform: uppercase;
+  line-height:    0.9;
+  letter-spacing: -0.03em;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.lobby-title__accent { color: var(--safety); }
+
+/* ── descriptor — larger, clearly readable ── */
+.lobby-desc {
+  font-family:    var(--font-mono);
+  font-size:      0.9rem;
+  color:          #3a3a3a;
+  line-height:    1.9;
+  letter-spacing: 0.02em;
+}
+
+/* ── matchmaking status — visible, not washed out ── */
+.status {
+  font-family:    var(--font-mono);
+  font-size:      0.7rem;
+  color:          #3a3a3a;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  display:        flex;
+  align-items:    center;
+  gap:            8px;
+}
+
+/* pulsing orange dot before status text */
+.status::before {
+  content:       '';
+  display:       inline-block;
+  flex-shrink:   0;
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    var(--safety);
+  animation:     pulse 2s ease-in-out infinite;
+}
+
+/* ── Find Game button — pill shape, glowing orange ── */
+#find-game-btn {
+  font-family:    var(--font-mono);
+  font-size:      0.92rem;
+  font-weight:    700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding:        1.1em 3.2em;
+  background:     var(--safety);
+  color:          var(--base);
+  border:         none;
+  border-radius:  50px;
+  box-shadow:     0 4px 22px rgba(255, 62, 0, 0.38);
+  cursor:         pointer;
+  transition:     transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#find-game-btn:hover:not(:disabled) {
+  transform:  translateY(-3px);
+  box-shadow: 0 8px 32px rgba(255, 62, 0, 0.55);
+}
+
+#find-game-btn:active:not(:disabled) {
+  transform:  translateY(1px);
+  box-shadow: 0 2px 10px rgba(255, 62, 0, 0.3);
+}
+
+#find-game-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── right panel: stat numbers ── */
+.lobby-stats {
+  display:     flex;
+  gap:         40px;
+  align-items: flex-end;
+}
+
+.lobby-stat {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.lobby-stat__val {
+  font-family:    var(--font-display);
+  font-size:      clamp(2.8rem, 5vw, 4.2rem);
+  font-weight:    700;
+  line-height:    1;
+  letter-spacing: -0.04em;
+  color:          var(--base);
+}
+
+.lobby-stat__label {
+  font-family:    var(--font-mono);
+  font-size:      0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color:          rgba(255,255,255,0.45);
+}
+
+/* ── right panel: rule lines ── */
+.lobby-rules {
+  display:        flex;
+  flex-direction: column;
+  gap:            16px;
+  padding-top:    36px;
+  border-top:     1px solid rgba(255,255,255,0.12);
+}
+
+.lobby-rule {
+  font-family:    var(--font-mono);
+  font-size:      0.82rem;
+  color:          rgba(255,255,255,0.65);
+  letter-spacing: 0.02em;
+  line-height:    1.5;
+  display:        flex;
+  align-items:    center;
+  gap:            14px;
+}
+
+/* short orange dash before each rule */
+.lobby-rule::before {
+  content:     '';
+  display:     inline-block;
+  flex-shrink: 0;
+  width:       22px;
+  height:      2px;
+  background:  var(--safety);
+}
+
+/* ── game area ── */
+#game-area {
   display:        flex;
   flex-direction: column;
   align-items:    center;
   gap:            16px;
-  margin-top:     40px; /* push it down from the header a little */
+  width:          100%;
+  max-width:      700px;
+  margin:         0 auto;
+  padding:        32px 16px 56px;
 }
 
-/* muted status text used for "Find an opponent" and "Searching…" messages */
-.status {
-  font-size:  0.95rem;
-  color:      var(--color-absent);
-  text-align: center;
-}
-
-/* ── Find Game button ────────────────────────────────────────────────────────────
-   Big green call-to-action button in the lobby.                               */
-#find-game-btn {
-  padding:          12px 32px;
-  font-size:        1rem;
-  font-weight:      700;
-  letter-spacing:   1px;
-  text-transform:   uppercase;
-  background-color: var(--color-correct); /* green — matches the "correct" tile colour */
-  color:            #fff;
-  border:           none;
-  border-radius:    4px;
-  cursor:           pointer;
-  transition:       background-color 0.15s; /* smooth hover colour change */
-}
-
-#find-game-btn:hover:not(:disabled) { background-color: #538d4e; } /* slightly darker green on hover */
-#find-game-btn:disabled             { opacity: 0.5; cursor: not-allowed; } /* dimmed while searching */
-
-/* ── two-board layout ────────────────────────────────────────────────────────────
-   Flex row that places the player's board and the opponent's board side by side.
-   flex-wrap lets them stack vertically on very small screens.                 */
+/* ── two-board layout ── */
 .boards-container {
   display:         flex;
-  gap:             32px;          /* space between the two boards */
-  align-items:     flex-start;    /* align tops, not centres, so labels line up */
-  flex-wrap:       wrap;          /* stack vertically if there isn't enough horizontal space */
-  justify-content: center;        /* centre the pair of boards within main */
+  gap:             32px;
+  align-items:     flex-start;
+  flex-wrap:       wrap;
+  justify-content: center;
 }
 
-/* vertical wrapper for a board label + the board grid */
 .board-col {
   display:        flex;
   flex-direction: column;
   align-items:    center;
-  gap:            8px; /* space between the label and the board */
+  gap:            8px;
 }
 
-/* small uppercase label above each board ("You" / "Opponent") */
 .board-label {
-  font-size:      0.7rem;
-  font-weight:    700;
-  letter-spacing: 2px;
+  font-family:    var(--font-mono);
+  font-size:      0.6rem;
+  font-weight:    500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color:          var(--color-absent); /* muted so it doesn't distract from the board */
+  color:          var(--safety);
 }
 
-/* in-game result message: shown after a win, loss, or invalid guess */
 .game-status {
-  min-height:  1.4em;    /* reserve space so the layout doesn't jump when text appears */
-  font-size:   0.95rem;
-  font-weight: 700;
-  text-align:  center;
-  color:       var(--color-text);
+  min-height:     1.4em;
+  font-family:    var(--font-mono);
+  font-size:      0.8rem;
+  font-weight:    700;
+  text-align:     center;
+  color:          var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-/* ── board grid ──────────────────────────────────────────────────────────────────
-   6 rows × 5 columns of square tiles.
-   --tile-size and --tile-gap are CSS variables so the opponent board can override them. */
+/* ── board grid ── */
 .board {
-  display:                grid;
-  grid-template-rows:     repeat(6, var(--tile-size)); /* 6 rows, each as tall as one tile */
-  gap:                    var(--tile-gap);
+  display:            grid;
+  grid-template-rows: repeat(6, var(--tile-size));
+  gap:                var(--tile-gap);
 }
 
-/* each row is itself a grid of 5 equally-sized columns */
 .row {
   display:               grid;
   grid-template-columns: repeat(5, var(--tile-size));
   gap:                   var(--tile-gap);
 }
 
-/* individual tile: a square with centred content and a border */
+/* tile — sharp corners, thick border */
 .tile {
   width:           var(--tile-size);
   height:          var(--tile-size);
-  border:          2px solid var(--color-tile-border);
+  border:          var(--border-thin);
   display:         flex;
   align-items:     center;
   justify-content: center;
+  font-family:     var(--font-display);
   font-size:       2rem;
   font-weight:     700;
   text-transform:  uppercase;
-  color:           var(--color-text);
-  transition:      border-color 0.05s, background-color 0.3s, color 0.3s; /* smooth colour reveal */
+  color:           var(--ink);
+  background:      var(--base);
+  transition:      border-color 0.05s, background-color 0.3s, color 0.3s;
 }
 
-/* a tile that has a letter typed into it gets a darker border to indicate it's "active" */
 .tile.filled {
-  border-color: var(--color-tile-active);
-  animation:    pop 0.1s ease; /* brief scale-up animation when a letter is typed */
+  border:    var(--border);
+  animation: pop 0.1s ease;
 }
 
-/* ── tile revealed states ────────────────────────────────────────────────────────
-   Set via data-state attribute by JS after a guess is submitted.              */
-.tile[data-state="correct"] {
-  background-color: var(--color-correct); /* green background */
-  border-color:     var(--color-correct);
-  color:            #fff; /* white text so it reads against the coloured background */
-}
-.tile[data-state="present"] {
-  background-color: var(--color-present); /* yellow background */
-  border-color:     var(--color-present);
-  color:            #fff;
-}
-.tile[data-state="absent"] {
-  background-color: var(--color-absent);  /* gray background */
-  border-color:     var(--color-absent);
-  color:            #fff;
-}
+.tile[data-state="correct"] { background-color: var(--color-correct); border-color: var(--color-correct); color: var(--base); }
+.tile[data-state="present"]  { background-color: var(--color-present); border-color: var(--color-present); color: var(--base); }
+.tile[data-state="absent"]   { background-color: var(--color-absent);  border-color: var(--color-absent);  color: var(--base); }
 
-/* ── opponent board overrides ────────────────────────────────────────────────────
-   The opponent board uses smaller tiles because we only show colours, not letters,
-   so there's no need for the tiles to be large enough to read text.          */
-.opp-board {
-  --tile-size: 40px; /* smaller than the main board's 62px */
-  --tile-gap:   4px; /* slightly tighter gap to match the smaller tiles */
-}
+/* ── opponent board — smaller tiles, colours only ── */
+.opp-board { --tile-size: 40px; --tile-gap: 4px; }
 
-/* ── keyboard ────────────────────────────────────────────────────────────────────
-   Three rows of clickable letter keys below the boards.                      */
+/* ── keyboard ── */
 .keyboard {
   display:        flex;
   flex-direction: column;
   align-items:    center;
-  gap:            8px;    /* vertical space between each row of keys */
-  margin-top:     8px;
+  gap:            6px;
+  margin-top:     12px;
 }
 
-/* horizontal row of keys */
-.kb-row {
-  display: flex;
-  gap:     6px; /* horizontal space between individual keys */
-}
+.kb-row { display: flex; gap: 5px; }
 
-/* individual key button */
 .key {
-  height:           58px;
-  min-width:        43px;  /* standard key width; "wide" keys override this */
+  height:           52px;
+  min-width:        42px;
   padding:          0 6px;
-  border:           none;
-  border-radius:    4px;
-  background-color: var(--color-key-bg);
-  color:            var(--color-key-text);
-  font-size:        0.85rem;
+  border:           var(--border-thin);
+  box-shadow:       3px 3px 0px var(--ink);
+  background:       var(--surface);
+  color:            var(--ink);
+  font-family:      var(--font-mono);
+  font-size:        0.78rem;
   font-weight:      700;
   text-transform:   uppercase;
+  letter-spacing:   0.04em;
   cursor:           pointer;
   display:          flex;
   align-items:      center;
   justify-content:  center;
-  transition:       background-color 0.2s, color 0.2s; /* smooth colour change when a letter's state is revealed */
-  -webkit-tap-highlight-color: transparent; /* remove the blue flash on mobile tap */
+  transition:       none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ENTER and ⌫ are wider than letter keys */
-.key.wide { min-width: 65px; font-size: 0.75rem; }
+.key.wide { min-width: 60px; font-size: 0.65rem; }
 
-/* subtle darkening when hovering any key */
-.key:hover { filter: brightness(0.92); }
+.key:hover  { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--ink); }
+.key:active { transform: translate(2px,  2px);  box-shadow: none; }
 
-/* ── key revealed states ─────────────────────────────────────────────────────────
-   Updated by JS after each guess so the keyboard shows which letters are known. */
-.key[data-state="correct"] { background-color: var(--color-correct); color: #fff; }
-.key[data-state="present"]  { background-color: var(--color-present); color: #fff; }
-.key[data-state="absent"]   { background-color: var(--color-absent);  color: #fff; }
+.key[data-state="correct"] { background-color: var(--color-correct); border-color: var(--color-correct); color: var(--base); box-shadow: 3px 3px 0px rgba(0,0,0,0.35); }
+.key[data-state="present"]  { background-color: var(--color-present); border-color: var(--color-present); color: var(--base); box-shadow: 3px 3px 0px rgba(0,0,0,0.35); }
+.key[data-state="absent"]   { background-color: var(--color-absent);  border-color: var(--color-absent);  color: var(--base); box-shadow: 3px 3px 0px rgba(0,0,0,0.25); }
 
-/* ── animations ──────────────────────────────────────────────────────────────────
-   Brief scale-up when a letter is typed into a tile.                         */
+/* ── animations ── */
 @keyframes pop {
   0%   { transform: scale(1); }
-  50%  { transform: scale(1.12); } /* scale to 112% at the midpoint */
-  100% { transform: scale(1); }    /* return to normal size */
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* ── responsive: stack columns on narrow screens ── */
+@media (max-width: 768px) {
+  #lobby {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .lobby-left {
+    padding:      48px 24px;
+    border-right: none;
+    border-bottom: var(--border);
+  }
+  .lobby-right  { padding: 40px 24px; }
+  header        { padding: 0 20px; }
+  .header-tagline { display: none; }
+  #find-game-btn { align-self: stretch; text-align: center; }
 }
