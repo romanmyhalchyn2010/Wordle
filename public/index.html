@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=3" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
+  <link rel="stylesheet" href="style.css?v=4" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
 </head>
 <body>
 
@@ -444,6 +444,29 @@
         if (!cur || priority[result[i]] > priority[cur]) btn.dataset.state = result[i];
       });
     }
+
+
+    // ── cursor spotlight ──────────────────────────────────────────────────────
+    // On every mousemove, update --mx/--my on each background element with the
+    // cursor position in that element's local coordinate space.
+    // When the cursor is outside an element the coords go negative, pushing the
+    // radial-gradient mask off-screen so the spotlight disappears automatically.
+
+    const spotlightEls = [
+      document.querySelector(".lobby-left"),
+      document.querySelector(".lobby-right"),
+      document.querySelector(".game-panel--left"),
+      document.querySelector(".game-panel--right"),
+      document.querySelector(".game-center"),
+    ].filter(Boolean);
+
+    document.addEventListener("mousemove", (e) => {
+      spotlightEls.forEach(el => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        el.style.setProperty("--my", `${e.clientY - r.top}px`);
+      });
+    });
   </script>
 </body>
 </html>
