@@ -460,13 +460,25 @@
       document.querySelector(".game-center"),
     ].filter(Boolean);
 
-    document.addEventListener("mousemove", (e) => {
-      spotlightEls.forEach(el => {
-        const r = el.getBoundingClientRect();
-        el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-        el.style.setProperty("--my", `${e.clientY - r.top}px`);
+    // target = where the cursor actually is; current = where the spotlight is (lags behind)
+    let mouseX = -999, mouseY = -999;
+    const spotPos = spotlightEls.map(() => ({ x: -999, y: -999 }));
+    const LERP = 0.1; // 0 = frozen, 1 = instant — 0.1 gives a ~10-frame lag
+
+    document.addEventListener("mousemove", (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+
+    (function animateSpotlight() {
+      spotlightEls.forEach((el, i) => {
+        const r  = el.getBoundingClientRect();
+        const tx = mouseX - r.left;
+        const ty = mouseY - r.top;
+        spotPos[i].x += (tx - spotPos[i].x) * LERP;
+        spotPos[i].y += (ty - spotPos[i].y) * LERP;
+        el.style.setProperty("--mx", `${spotPos[i].x}px`);
+        el.style.setProperty("--my", `${spotPos[i].y}px`);
       });
-    });
+      requestAnimationFrame(animateSpotlight);
+    })();
   </script>
 </body>
 </html>
