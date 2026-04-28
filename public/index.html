@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=6" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
+  <link rel="stylesheet" href="style.css?v=7" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
 </head>
 <body>
 
@@ -499,8 +499,10 @@
       }
 
       const GRID = 8, N = 14, FREQ = 0.0028;
-      const C_LT = ['#c1121f','#023e8a','#1b7a42','#b5660a','#7b2d8b','#0a5e78','#6a4c93','#c45e00'];
-      const C_DK = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#da77f2','#ff9f1c','#63d9f7','#ffb347'];
+      // Monochrome: dark lines on light bg, light lines on dark bg
+      // base = very subtle (matches old grid feel); lit = clearly visible in spotlight
+      const BASE_CLR = isDk => isDk ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+      const LIT_CLR  = isDk => isDk ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.65)';
 
       const instances = [];
 
@@ -518,21 +520,27 @@
         const rng = mx - mn || 1;
         for (let i = 0; i < field.length; i++) field[i] = (field[i] - mn) / rng;
 
-        const off = document.createElement('canvas');
-        off.width = W; off.height = H;
-        const octx = off.getContext('2d');
-        const pal = isDark ? C_DK : C_LT;
-        octx.lineWidth = 1.2;
-        for (let l = 0; l < N; l++) {
-          const segs = getSegs(field, rows, cols, GRID, (l + 1) / (N + 1));
-          octx.beginPath();
-          octx.strokeStyle = pal[l % pal.length];
-          octx.globalAlpha = isDark ? 0.45 : 0.38;
-          for (const [p0, p1] of segs) { octx.moveTo(p0[0], p0[1]); octx.lineTo(p1[0], p1[1]); }
-          octx.stroke();
+        // All contour segments (shared between both renders)
+        const allSegs = Array.from({ length: N }, (_, l) =>
+          getSegs(field, rows, cols, GRID, (l + 1) / (N + 1)));
+
+        function makeCanvas(color, lineWidth) {
+          const c = document.createElement('canvas');
+          c.width = W; c.height = H;
+          const x = c.getContext('2d');
+          x.strokeStyle = color; x.lineWidth = lineWidth;
+          x.beginPath();
+          for (const segs of allSegs)
+            for (const [p0, p1] of segs) { x.moveTo(p0[0], p0[1]); x.lineTo(p1[0], p1[1]); }
+          x.stroke();
+          return c;
         }
-        octx.globalAlpha = 1;
-        return { W, H, off };
+
+        const offBase = makeCanvas(BASE_CLR(isDark), 1);
+        const offLit  = makeCanvas(LIT_CLR(isDark),  1.5);
+        const tmp = document.createElement('canvas');
+        tmp.width = W; tmp.height = H;
+        return { W, H, offBase, offLit, tmp };
       }
 
       function initEl(el, isDark) {
@@ -550,17 +558,27 @@
         }
         function render() {
           if (!base) { tryBuild(); if (!base) return; }
-          const { W, H, off } = base;
+          const { W, H, offBase, offLit, tmp } = base;
+
+          // 1. Draw subtle base pattern
           ctx.clearRect(0, 0, W, H);
-          ctx.drawImage(off, 0, 0);
+          ctx.drawImage(offBase, 0, 0);
+
+          // 2. Reveal lit pattern within spotlight using destination-in masking
           if (sx > -1000) {
-            const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 240);
-            if (isDark) {
-              g.addColorStop(0, 'rgba(255,255,255,0.10)'); g.addColorStop(0.5, 'rgba(255,255,255,0.04)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-            } else {
-              g.addColorStop(0, 'rgba(0,0,0,0.07)'); g.addColorStop(0.5, 'rgba(0,0,0,0.025)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-            }
-            ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+            const tctx = tmp.getContext('2d');
+            tctx.clearRect(0, 0, W, H);
+            tctx.drawImage(offLit, 0, 0);          // copy lit lines to tmp
+            // Mask tmp to the spotlight circle: keep pixels where gradient is opaque
+            const g = tctx.createRadialGradient(sx, sy, 0, sx, sy, 200);
+            g.addColorStop(0,    'rgba(0,0,0,1)');
+            g.addColorStop(0.6,  'rgba(0,0,0,0.9)');
+            g.addColorStop(1,    'rgba(0,0,0,0)');
+            tctx.globalCompositeOperation = 'destination-in';
+            tctx.fillStyle = g;
+            tctx.fillRect(0, 0, W, H);
+            tctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(tmp, 0, 0);              // composite masked lit lines on top
           }
         }
 
