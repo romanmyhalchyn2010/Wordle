@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=7" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
+  <link rel="stylesheet" href="style.css?v=8" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
 </head>
 <body>
 
@@ -502,7 +502,7 @@
       // Monochrome: dark lines on light bg, light lines on dark bg
       // base = very subtle (matches old grid feel); lit = clearly visible in spotlight
       const BASE_CLR = isDk => isDk ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
-      const LIT_CLR  = isDk => isDk ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.65)';
+      const LIT_CLR  = isDk => isDk ? 'rgba(255,255,255,0.50)' : 'rgba(0,0,0,0.50)';
 
       const instances = [];
 
@@ -568,17 +568,23 @@
           if (sx > -1000) {
             const tctx = tmp.getContext('2d');
             tctx.clearRect(0, 0, W, H);
-            tctx.drawImage(offLit, 0, 0);          // copy lit lines to tmp
-            // Mask tmp to the spotlight circle: keep pixels where gradient is opaque
-            const g = tctx.createRadialGradient(sx, sy, 0, sx, sy, 200);
-            g.addColorStop(0,    'rgba(0,0,0,1)');
-            g.addColorStop(0.6,  'rgba(0,0,0,0.9)');
-            g.addColorStop(1,    'rgba(0,0,0,0)');
+            tctx.drawImage(offLit, 0, 0);
+            // Elliptical mask: translate to spotlight centre, scale x/y differently,
+            // then draw a circular gradient — the scale turns it into a mild ellipse
             tctx.globalCompositeOperation = 'destination-in';
+            tctx.save();
+            tctx.translate(sx, sy);
+            tctx.scale(1.18, 0.82);               // wider than tall → gentle ellipse
+            const g = tctx.createRadialGradient(0, 0, 0, 0, 0, 165); // smaller radius
+            g.addColorStop(0,   'rgba(0,0,0,1)');
+            g.addColorStop(0.35,'rgba(0,0,0,0.85)');
+            g.addColorStop(0.75,'rgba(0,0,0,0.3)');
+            g.addColorStop(1,   'rgba(0,0,0,0)');  // soft, wide edge blur
             tctx.fillStyle = g;
-            tctx.fillRect(0, 0, W, H);
+            tctx.fillRect(-W, -H, W * 3, H * 3);
+            tctx.restore();
             tctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(tmp, 0, 0);              // composite masked lit lines on top
+            ctx.drawImage(tmp, 0, 0);
           }
         }
 
@@ -602,7 +608,7 @@
 
       // Lerp spotlight RAF loop
       let mouseX = -9999, mouseY = -9999;
-      const LERP = 0.1;
+      const LERP = 0.065;
       const spotPos = [];
       document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
       (function loop() {
