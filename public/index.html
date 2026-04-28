@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=2" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
+  <link rel="stylesheet" href="style.css?v=3" /><!-- v=2 busts the browser cache so the new layout loads immediately -->
 </head>
 <body>
 
@@ -150,6 +150,19 @@
       </aside>
 
     </section>
+
+    <!-- ── result overlay: shown at game end ── -->
+    <div id="result-overlay" class="result-overlay hidden">
+      <div class="result-card">
+        <div id="result-icon" class="result-icon"></div>
+        <h2 id="result-title" class="result-title"></h2>
+        <p id="result-subtitle" class="result-subtitle"></p>
+        <div class="result-divider"></div>
+        <p id="result-word" class="result-word"></p>
+        <button class="play-again-btn" onclick="playAgain()">Play Again</button>
+      </div>
+    </div>
+
   </main>
 
   <script>
@@ -231,22 +244,93 @@
 
       updateOpponentBoard(data.opponent_grid || []); // repaint the opponent's tiles with the latest colours
 
-      // check if the game ended due to the opponent's action (we handle our own ending in submitGuess)
+      // check if the game ended due to the opponent's action (own ending is handled in submitGuess)
       if (data.game_over && !gameEnded) {
-        endGame(
-          data.i_won    ? "You won! 🎉"                                              // we won (e.g. our guess was processed between polls)
-          : data.winner ? `Opponent won! The word was: ${data.word.toUpperCase()}`   // opponent guessed correctly
-                        : `Draw! The word was: ${data.word.toUpperCase()}`           // both players ran out of guesses
-        );
+        endGame(data);
       }
     }
 
-    function endGame(message) {
-      gameEnded = true;                          // set flag so no further end-game logic runs
-      clearInterval(pollTimer);                  // stop the polling loop — no need to keep checking
-      gameStatus.textContent = message;          // display the result to the player
-      keyboard.style.pointerEvents = "none";     // disable the keyboard so no more guesses can be typed
+    function endGame(data) {
+      if (gameEnded) return;
+      gameEnded = true;
+      clearInterval(pollTimer);
+      keyboard.style.pointerEvents = "none";
+
+      const overlay    = document.getElementById("result-overlay");
+      const iconEl     = document.getElementById("result-icon");
+      const titleEl    = document.getElementById("result-title");
+      const subtitleEl = document.getElementById("result-subtitle");
+      const wordEl     = document.getElementById("result-word");
+
+      const iWon    = !!(data.i_won || data.won);
+      const oppLeft = !!data.opponent_left;
+      const oppWon  = !!(data.winner && !iWon && !oppLeft);
+
+      if (oppLeft) {
+        iconEl.textContent     = "👋";
+        titleEl.textContent    = "Opponent Left";
+        titleEl.className      = "result-title";
+        subtitleEl.textContent = "Your opponent disconnected. You win by default!";
+      } else if (iWon) {
+        iconEl.textContent     = "🎉";
+        titleEl.textContent    = "You Won!";
+        titleEl.className      = "result-title result-title--win";
+        subtitleEl.textContent = "You guessed the word first!";
+      } else if (oppWon) {
+        iconEl.textContent     = "😢";
+        titleEl.textContent    = "You Lost";
+        titleEl.className      = "result-title result-title--loss";
+        subtitleEl.textContent = "Opponent guessed it first.";
+      } else {
+        iconEl.textContent     = "🤝";
+        titleEl.textContent    = "Draw";
+        titleEl.className      = "result-title";
+        subtitleEl.textContent = "Neither player guessed the word.";
+      }
+
+      wordEl.textContent = data.word ? data.word.toUpperCase() : "";
+      overlay.classList.remove("hidden");
     }
+
+    async function playAgain() {
+      // clean up this player's server session before re-queuing
+      await fetch(`/api/player/${PLAYER_ID}`, { method: "DELETE" }).catch(() => {});
+
+      // reset game state
+      currentRow  = 0;
+      currentWord = "";
+      gameId      = null;
+      gameEnded   = false;
+      clearInterval(pollTimer);
+
+      // clear board tiles
+      document.querySelectorAll("#board .tile").forEach(t => {
+        t.textContent = "";
+        t.removeAttribute("data-state");
+        t.classList.remove("filled");
+      });
+      document.querySelectorAll("#opponent-board .tile").forEach(t => t.removeAttribute("data-state"));
+
+      // reset keyboard key colours
+      document.querySelectorAll(".key").forEach(k => k.removeAttribute("data-state"));
+
+      // reset UI state
+      myGuessCount.textContent     = "0";
+      oppGuessCount.textContent    = "0";
+      gameStatus.textContent       = "";
+      keyboard.style.pointerEvents = "";
+
+      document.getElementById("result-overlay").classList.add("hidden");
+      statusMsg.textContent = "Find an opponent to start playing.";
+      findBtn.disabled      = false;
+      gameArea.classList.add("hidden");
+      lobby.classList.remove("hidden");
+    }
+
+    // notify the server when the player closes or refreshes the tab
+    window.addEventListener("beforeunload", () => {
+      fetch(`/api/player/${PLAYER_ID}`, { method: "DELETE", keepalive: true }).catch(() => {});
+    });
 
 
     // ── keyboard input ────────────────────────────────────────────────────────
@@ -315,9 +399,9 @@
       myGuessCount.textContent = currentRow;         // update the left-panel counter to reflect the new total
 
       if (data.won) {
-        endGame("You won! 🎉");                                          // this guess solved the word
+        endGame({ ...data, i_won: true });          // this guess solved the word
       } else if (data.game_over) {
-        endGame(`Game over! The word was: ${data.word.toUpperCase()}`); // ran out of guesses
+        endGame({ ...data, i_won: false });         // both players exhausted — draw
       }
     }
 

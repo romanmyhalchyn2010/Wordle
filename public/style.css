@@ -533,3 +533,91 @@ main {
   .header-tagline  { display: none; }
   #find-game-btn   { align-self: stretch; text-align: center; }
 }
+
+/* ── result overlay ───────────────────────────────────────────────────────── */
+.result-overlay {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  z-index:         1000;
+}
+.result-overlay.hidden { display: none; }
+
+.result-card {
+  background:     var(--base);
+  border:         var(--border);
+  box-shadow:     10px 10px 0 var(--ink);
+  padding:        48px 56px;
+  text-align:     center;
+  max-width:      420px;
+  width:          90%;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            18px;
+}
+
+.result-icon { font-size: 3.2rem; line-height: 1; }
+
+.result-title {
+  font-family: var(--font-display);
+  font-size:   2.4rem;
+  font-weight: 700;
+  color:       var(--ink);
+  margin:      0;
+}
+.result-title--win  { color: var(--color-correct); }
+.result-title--loss { color: var(--safety); }
+
+.result-subtitle {
+  font-family: var(--font-mono);
+  font-size:   0.875rem;
+  color:       #666;
+  margin:      0;
+}
+
+.result-word {
+  font-family:     var(--font-mono);
+  font-size:       1.75rem;
+  font-weight:     700;
+  letter-spacing:  0.3em;
+  color:           var(--ink);
+  background:      var(--surface);
+  padding:         12px 28px;
+  border:          var(--border-thin);
+  margin-top:      4px;
+}
+
+.result-divider {
+  width:      100%;
+  height:     2px;
+  background: var(--surface);
+}
+
+.play-again-btn {
+  background:    var(--safety);
+  color:         var(--base);
+  border:        none;
+  border-radius: 50px;
+  padding:       14px 44px;
+  font-family:   var(--font-mono);
+  font-size:     1rem;
+  font-weight:   700;
+  letter-spacing: 0.04em;
+  cursor:        pointer;
+  box-shadow:    0 4px 22px rgba(255,62,0,0.38);
+  transition:    transform 0.1s, box-shadow 0.1s;
+  margin-top:    8px;
+}
+.play-again-btn:hover {
+  transform:  translateY(-2px);
+  box-shadow: 0 6px 28px rgba(255,62,0,0.5);
+}
+.play-again-btn:active {
+  transform:  translateY(2px);
+  box-shadow: 0 2px 12px rgba(255,62,0,0.28);
+}

@@ -53,6 +53,7 @@ class WordleGame:
         self.guesses: list[dict] = []   # every guess from both players, in submission order
         self.game_over = False          # becomes True when someone wins or both players exhaust their guesses
         self.winner: str | None = None  # player_id of whoever guessed correctly, or None if no winner yet
+        self.opponent_left = False      # set True when a player disconnects mid-game so the other side is notified
 
     def add_player(self, player_id: str) -> dict:
         if len(self.players) >= 2:          # room is full — reject a third player
@@ -117,27 +118,27 @@ class WordleGame:
         ] if opponent_id else []  # empty list if there is no opponent yet
 
         return {
-            "word_length":   WORD_LENGTH,    # tells the client how wide to draw the board
-            "max_guesses":   MAX_GUESSES,    # tells the client how many rows to draw
-            "my_guesses":    my_guesses,     # this player's full guess history (letters + colours)
-            "opponent_grid": opponent_grid,  # opponent's guess history as colours only
-            "game_over":     self.game_over, # whether the game has ended
-            "winner":        self.winner,    # player_id of the winner, or None
-            # convenience bool so the client doesn't have to compare IDs
-            "i_won":         self.winner == player_id if self.winner else False,
-            # word is hidden until game over so neither player can read it from the API mid-game
-            "word":          self.word if self.game_over else None,
+            "word_length":    WORD_LENGTH,    # tells the client how wide to draw the board
+            "max_guesses":    MAX_GUESSES,    # tells the client how many rows to draw
+            "my_guesses":     my_guesses,     # this player's full guess history (letters + colours)
+            "opponent_grid":  opponent_grid,  # opponent's guess history as colours only
+            "game_over":      self.game_over, # whether the game has ended
+            "winner":         self.winner,    # player_id of the winner, or None
+            "i_won":          self.winner == player_id if self.winner else False,
+            "opponent_left":  self.opponent_left,  # True when the other player disconnected mid-game
+            "word":           self.word if self.game_over else None,
         }
 
     def get_state(self) -> dict:
         # raw full state used internally; does not personalise for either player
         return {
-            "word_length": WORD_LENGTH,   # board width
-            "max_guesses": MAX_GUESSES,   # board height
-            "guesses":     self.guesses,  # all guesses from all players, unfiltered
-            "game_over":   self.game_over,
-            "winner":      self.winner,
-            "word":        self.word if self.game_over else None,
+            "word_length":   WORD_LENGTH,
+            "max_guesses":   MAX_GUESSES,
+            "guesses":       self.guesses,
+            "game_over":     self.game_over,
+            "winner":        self.winner,
+            "opponent_left": self.opponent_left,
+            "word":          self.word if self.game_over else None,
         }
 
     def _score(self, guess: str) -> list[str]:

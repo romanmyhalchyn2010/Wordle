@@ -87,9 +87,15 @@ def remove_player(player_id: str) -> dict:
         opponent_ids = [p for p in game.players if p != player_id]
         game.remove_player(player_id)  # remove the leaving player from the game object
 
-        if not game.players:  # no players left in the game — safe to fully delete it
-            active_games.pop(game_id, None)         # free the game from memory
-            for pid in opponent_ids:                # clean up the opponent's session pointer too
+        if not game.players:  # no players left — safe to fully delete the game
+            active_games.pop(game_id, None)
+            for pid in opponent_ids:
                 player_sessions.pop(pid, None)
+        elif not game.game_over:
+            # opponent is still connected and the game wasn't over — end it and notify them
+            game.opponent_left = True
+            game.game_over = True
+            # award the win to whoever is still in the game
+            game.winner = game.players[0]
 
-    return {"status": "removed", "game_id": game_id}  # confirm removal to the caller
+    return {"status": "removed", "game_id": game_id}
